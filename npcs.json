@@ -1,48 +1,5 @@
 {
-    "Player": {
-        "name_ru": "Игрок", "name_en": "Player",
-        "role": "Player", "size": "1",
-        "tiers": {
-            "Tier 1": {"hp": 10, "eva": 10, "edef": 10, "spd": 4, "sen": 10, "save": 10}
-        },
-        "base_features":[
-            {
-                "name_ru": "Вторжение (Фрагментный Сигнал)", "name_en": "Invade (Fragment Signal)",
-                "type_ru": "Тех. Атака", "type_en": "Tech Attack",
-                "desc_ru": "Цель получает 2 Нагрева, становится Ослабленной и Замедленной до конца след. хода.",
-                "desc_en": "Target takes 2 Heat, becomes Impaired and Slowed until the end of its next turn.",
-                "range": "Sensors"
-            },
-            {
-                "name_ru": "Захват", "name_en": "Lock On",
-                "type_ru": "Быстрое Действие", "type_en": "Quick Action",
-                "desc_ru": "Цель в пределах Сенсоров получает состояние Захваченный (+1 Точности к атаке по ней).",
-                "desc_en": "Target within Sensors gains Lock On (+1 Accuracy to attacks against it).",
-                "range": "Sensors"
-            },
-            {
-                "name_ru": "Сканирование", "name_en": "Scan",
-                "type_ru": "Быстрое Действие", "type_en": "Quick Action",
-                "desc_ru": "Узнать ПЗ, Уклонение, Э-Защиту, Броню, Нагрев, Навыки и Оружие цели.",
-                "desc_en": "Learn target's HP, Evasion, E-Defense, Armor, Heat, Traits and Weapons.",
-                "range": "Sensors"
-            }
-        ],
-        "optional_features":[
-            {
-                "name_ru": "Перегрузка", "name_en": "Overcharge",
-                "type_ru": "Свободное Действие", "type_en": "Free Action",
-                "desc_ru": "Получить доп. Быстрое Действие за Нагрев (1, 1d3, 1d6, 1d6+4).",
-                "desc_en": "Gain an extra Quick Action for Heat (1, 1d3, 1d6, 1d6+4)."
-            },
-            {
-                "name_ru": "Скрытие", "name_en": "Hide",
-                "type_ru": "Быстрое Действие", "type_en": "Quick Action",
-                "desc_ru": "Требует укрытия или невидимости. Вы становитесь Скрытым (нельзя выбрать целью).",
-                "desc_en": "Requires cover or invisibility. You become Hidden (cannot be targeted)."
-            }
-        ]
-    },
+
     "Ace": {
         "name_ru": "Ас", "name_en": "Ace",
         "role": "Striker", "size": "1",
