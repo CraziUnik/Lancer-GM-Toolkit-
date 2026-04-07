@@ -1,0 +1,608 @@
+{
+    "Player": {
+        "name_ru": "Игрок", "name_en": "Player",
+        "role": "Player", "size": "1",
+        "tiers": {
+            "Tier 1": {"hp": 10, "eva": 10, "edef": 10, "spd": 4, "sen": 10, "save": 10}
+        },
+        "base_features":[
+            {
+                "name_ru": "Вторжение (Фрагментный Сигнал)", "name_en": "Invade (Fragment Signal)",
+                "type_ru": "Тех. Атака", "type_en": "Tech Attack",
+                "desc_ru": "Цель получает 2 Нагрева, становится Ослабленной и Замедленной до конца след. хода.",
+                "desc_en": "Target takes 2 Heat, becomes Impaired and Slowed until the end of its next turn.",
+                "range": "Sensors"
+            },
+            {
+                "name_ru": "Захват", "name_en": "Lock On",
+                "type_ru": "Быстрое Действие", "type_en": "Quick Action",
+                "desc_ru": "Цель в пределах Сенсоров получает состояние Захваченный (+1 Точности к атаке по ней).",
+                "desc_en": "Target within Sensors gains Lock On (+1 Accuracy to attacks against it).",
+                "range": "Sensors"
+            },
+            {
+                "name_ru": "Сканирование", "name_en": "Scan",
+                "type_ru": "Быстрое Действие", "type_en": "Quick Action",
+                "desc_ru": "Узнать ПЗ, Уклонение, Э-Защиту, Броню, Нагрев, Навыки и Оружие цели.",
+                "desc_en": "Learn target's HP, Evasion, E-Defense, Armor, Heat, Traits and Weapons.",
+                "range": "Sensors"
+            }
+        ],
+        "optional_features":[
+            {
+                "name_ru": "Перегрузка", "name_en": "Overcharge",
+                "type_ru": "Свободное Действие", "type_en": "Free Action",
+                "desc_ru": "Получить доп. Быстрое Действие за Нагрев (1, 1d3, 1d6, 1d6+4).",
+                "desc_en": "Gain an extra Quick Action for Heat (1, 1d3, 1d6, 1d6+4)."
+            },
+            {
+                "name_ru": "Скрытие", "name_en": "Hide",
+                "type_ru": "Быстрое Действие", "type_en": "Quick Action",
+                "desc_ru": "Требует укрытия или невидимости. Вы становитесь Скрытым (нельзя выбрать целью).",
+                "desc_en": "Requires cover or invisibility. You become Hidden (cannot be targeted)."
+            }
+        ]
+    },
+    "Ace": {
+        "name_ru": "Ас", "name_en": "Ace",
+        "role": "Striker", "size": "1",
+        "tiers": {
+            "Tier 1": {"hp": 10, "eva": 12, "edef": 8, "spd": 5, "sen": 10, "save": 10},
+            "Tier 2": {"hp": 12, "eva": 15, "edef": 8, "spd": 6, "sen": 10, "save": 12},
+            "Tier 3": {"hp": 14, "eva": 18, "edef": 10, "spd": 7, "sen": 10, "save": 14}
+        },
+        "base_features":[
+            {
+                "name_ru": "СШК Система Полета", "name_en": "Flight System",
+                "type_ru": "Система", "type_en": "System",
+                "desc_ru": "Могут летать при каждом перемещении или Ускорении.",
+                "desc_en": "Can fly whenever moving or boosting."
+            },
+            {
+                "name_ru": "Ракетная ПУ", "name_en": "Missile Pod",
+                "type_ru": "Основная ПУ", "type_en": "Main Launcher",
+                "desc_ru": "Урон: 4/6/8 Взрывного. Умное, Искатель. Игнорирует укрытия.",
+                "desc_en": "Damage: 4/6/8 Explosive. Smart, Seeking. Ignores cover.",
+                "range": "10"
+            }
+        ],
+        "optional_features":[
+            {
+                "name_ru": "Бочка", "name_en": "Barrel Roll",
+                "type_ru": "Реакция", "type_en": "Reaction",
+                "desc_ru": "Выполняет Бочку, пролетая 6 пространств. Атака противника промахивается.",
+                "desc_en": "Performs a Barrel Roll, flying 6 spaces. Enemy attack misses."
+            },
+            {
+                "name_ru": "Бомбоотсек", "name_en": "Bomb Bay",
+                "type_ru": "Система", "type_en": "System",
+                "desc_ru": "Сбрасывает бомбу на цель внизу. Спасбросок Маневренности или 6/8/10 урона и Сбивание.",
+                "desc_en": "Drops a bomb on a target below. Agility save or takes 6/8/10 damage and is knocked Prone."
+            }
+        ]
+    },
+    "Assassin": {
+        "name_ru": "Ассасин", "name_en": "Assassin",
+        "role": "Striker", "size": "1/2",
+        "tiers": {
+            "Tier 1": {"hp": 15, "eva": 12, "edef": 8, "spd": 6, "sen": 10, "save": 10},
+            "Tier 2": {"hp": 15, "eva": 15, "edef": 8, "spd": 6, "sen": 10, "save": 12},
+            "Tier 3": {"hp": 15, "eva": 17, "edef": 8, "spd": 8, "sen": 10, "save": 14}
+        },
+        "base_features":[
+            {
+                "name_ru": "Нагретое Лезвие", "name_en": "Heated Blade",
+                "type_ru": "Основное ОББ", "type_en": "Main Melee",
+                "desc_ru": "Урон: 4/5/6 Кинетического + 2 Нагрева. Двойной урон Сбитым или Ошеломленным.",
+                "desc_en": "Damage: 4/5/6 Kinetic + 2 Heat. Double damage to Prone or Stunned targets.",
+                "threat": "2"
+            },
+            {
+                "name_ru": "Метка Ассасина", "name_en": "Assassin's Mark",
+                "type_ru": "Черта", "type_en": "Trait",
+                "desc_ru": "Отмечает цель. Получает Сопротивляемость к её атакам.",
+                "desc_en": "Marks a target. Gains Resistance to its attacks."
+            }
+        ],
+        "optional_features":[
+            {
+                "name_ru": "Прыжок", "name_en": "Leap",
+                "type_ru": "Система", "type_en": "System",
+                "desc_ru": "Прыгает на 6 пространств. При приземлении Сбивает с ног.",
+                "desc_en": "Leaps 6 spaces. Knocks targets prone upon landing."
+            },
+            {
+                "name_ru": "Облачный Проектор", "name_en": "Cloud Projector",
+                "type_ru": "Система", "type_en": "System",
+                "desc_ru": "Создает Облако дыма (Взрыв 3), скрывающее Ассасина.",
+                "desc_en": "Creates a smoke cloud (Blast 3), hiding the Assassin."
+            }
+        ]
+    },
+    "Assault": {
+        "name_ru": "Штурмовик", "name_en": "Assault",
+        "role": "Striker", "size": "1",
+        "tiers": {
+            "Tier 1": {"hp": 15, "eva": 8, "edef": 8, "spd": 4, "sen": 8, "save": 10},
+            "Tier 2": {"hp": 18, "eva": 10, "edef": 9, "spd": 4, "sen": 8, "save": 12},
+            "Tier 3": {"hp": 21, "eva": 12, "edef": 10, "spd": 4, "sen": 8, "save": 14}
+        },
+        "base_features":[
+            {
+                "name_ru": "Тяжелая Штурм. Винтовка", "name_en": "Heavy Assault Rifle",
+                "type_ru": "Основная Винтовка", "type_en": "Main Rifle",
+                "desc_ru": "Урон: 6/8/10 Кинетического. Надежное 2/3/4.",
+                "desc_en": "Damage: 6/8/10 Kinetic. Reliable 2/3/4.",
+                "range": "10"
+            },
+            {
+                "name_ru": "Пригнуться", "name_en": "Hunker Down",
+                "type_ru": "Реакция", "type_en": "Reaction",
+                "desc_ru": "Получает Сопротивляемость ко всему урону от атаки.",
+                "desc_en": "Gains Resistance to all damage from the attack."
+            }
+        ],
+        "optional_features":[
+            {
+                "name_ru": "Автонаведение", "name_en": "Auto-Targeting",
+                "type_ru": "Черта", "type_en": "Trait",
+                "desc_ru": "Игнорирует укрытия при атаке (нужна прямая видимость).",
+                "desc_en": "Ignores cover when attacking (requires line of sight)."
+            },
+            {
+                "name_ru": "Ранговая Дисциплина", "name_en": "Rank Discipline",
+                "type_ru": "Черта", "type_en": "Trait",
+                "desc_ru": "+1 к атакам и спасброскам рядом с союзником.",
+                "desc_en": "+1 to attacks and saves when adjacent to an ally."
+            }
+        ]
+    },
+    "Barricade": {
+        "name_ru": "Баррикадист", "name_en": "Barricade",
+        "role": "Operator", "size": "2",
+        "tiers": {
+            "Tier 1": {"hp": 12, "eva": 6, "edef": 9, "spd": 3, "sen": 15, "save": 12},
+            "Tier 2": {"hp": 16, "eva": 7, "edef": 11, "spd": 3, "sen": 15, "save": 15},
+            "Tier 3": {"hp": 20, "eva": 8, "edef": 13, "spd": 4, "sen": 15, "save": 18}
+        },
+        "base_features":[
+            {
+                "name_ru": "Мобильный Принтер", "name_en": "Mobile Printer",
+                "type_ru": "Система", "type_en": "System",
+                "desc_ru": "Печатает куб Размера 2, обеспечивающий твердое укрытие (20 ПЗ).",
+                "desc_en": "Prints a Size 2 cube providing hard cover (20 HP)."
+            },
+            {
+                "name_ru": "Гравитонное Копье", "name_en": "Graviton Lance",
+                "type_ru": "Основная Пушка", "type_en": "Main Cannon",
+                "desc_ru": "Урон: 2 Энергетического. Замедляет цель до конца следующего хода.",
+                "desc_en": "Damage: 2 Energy. Slows the target until the end of its next turn.",
+                "range": "10"
+            }
+        ],
+        "optional_features":[
+            {
+                "name_ru": "Тянуть Вниз", "name_en": "Drag Down",
+                "type_ru": "Тех. Атака", "type_en": "Tech Attack",
+                "desc_ru": "За каждое пройденное пространство цель получает 2 ББ урона.",
+                "desc_en": "For each space moved, the target takes 2 AP damage."
+            },
+            {
+                "name_ru": "Сейсмический Репульсор", "name_en": "Seismic Repulsor",
+                "type_ru": "Система", "type_en": "System",
+                "desc_ru": "Отбрасывает на 3 гекса назад и сбивает с ног.",
+                "desc_en": "Pushes 3 hexes back and knocks prone."
+            }
+        ]
+    },
+    "Bastion": {
+        "name_ru": "Бастион", "name_en": "Bastion",
+        "role": "Defender", "size": "2",
+        "tiers": {
+            "Tier 1": {"hp": 10, "eva": 8, "edef": 8, "spd": 4, "sen": 5, "save": 10},
+            "Tier 2": {"hp": 10, "eva": 10, "edef": 8, "spd": 4, "sen": 5, "save": 12},
+            "Tier 3": {"hp": 10, "eva": 10, "edef": 8, "spd": 4, "sen": 5, "save": 14}
+        },
+        "base_features":[
+            {
+                "name_ru": "Тяжелый Штурмовой Щит", "name_en": "Heavy Assault Shield",
+                "type_ru": "Тяжелое ОББ", "type_en": "Heavy Melee",
+                "desc_ru": "Урон: 3/6/9 Кинетического. Толчок 1.",
+                "desc_en": "Damage: 3/6/9 Kinetic. Knockback 1.",
+                "threat": "1"
+            },
+            {
+                "name_ru": "Осадный Хранитель", "name_en": "Siege Keeper",
+                "type_ru": "Черта", "type_en": "Trait",
+                "desc_ru": "Союзники получают Сопротивляемость рядом с Бастионом.",
+                "desc_en": "Allies gain Resistance while adjacent to Bastion."
+            }
+        ],
+        "optional_features":[
+            {
+                "name_ru": "Бесстрашный Защитник", "name_en": "Dauntless Defender",
+                "type_ru": "Реакция", "type_en": "Reaction",
+                "desc_ru": "Перемещается и принимает урон вместо союзника.",
+                "desc_en": "Moves and takes damage instead of an ally."
+            },
+            {
+                "name_ru": "Двигатель Пауза", "name_en": "Pause Engine",
+                "type_ru": "Система", "type_en": "System",
+                "desc_ru": "Временно дает Невосприимчивость себе и союзнику.",
+                "desc_en": "Temporarily gives Immunity to self and an ally."
+            }
+        ]
+    },
+    "Bombard": {
+        "name_ru": "Бомбардир", "name_en": "Bombard",
+        "role": "Artillery", "size": "1",
+        "tiers": {
+            "Tier 1": {"hp": 10, "eva": 7, "edef": 12, "spd": 2, "sen": 15, "save": 11},
+            "Tier 2": {"hp": 13, "eva": 8, "edef": 14, "spd": 2, "sen": 15, "save": 13},
+            "Tier 3": {"hp": 16, "eva": 8, "edef": 16, "spd": 3, "sen": 15, "save": 16}
+        },
+        "base_features":[
+            {
+                "name_ru": "Бомбарда", "name_en": "Bombard",
+                "type_ru": "Сверхтяж. Пушка", "type_en": "Superheavy Cannon",
+                "desc_ru": "Урон: 5/7/8 Взрывного. Дуговое, Артиллерийское. Бьет по Взрыву 2.",
+                "desc_en": "Damage: 5/7/8 Explosive. Arcing, Ordnance. Hits Blast 2.",
+                "range": "25"
+            },
+            {
+                "name_ru": "Сотрясающие Снаряды", "name_en": "Concussion Shells",
+                "type_ru": "Система", "type_en": "System",
+                "desc_ru": "Сбивает цели с ног и создает два куба Размера 1 твердого укрытия.",
+                "desc_en": "Knocks targets prone and creates two Size 1 cubes of hard cover."
+            }
+        ],
+        "optional_features":[
+            {
+                "name_ru": "Высокопрочные Снаряды", "name_en": "High-Impact Shells",
+                "type_ru": "Черта", "type_en": "Trait",
+                "desc_ru": "Отбрасывает цель на 3 пространства и наносит 10/15/20 ББ укрытиям.",
+                "desc_en": "Knocks the target back 3 spaces and deals 10/15/20 AP damage to cover."
+            },
+            {
+                "name_ru": "Сигнальный Дрон", "name_en": "Signal Drone",
+                "type_ru": "Дрон", "type_en": "Drone",
+                "desc_ru": "Отключает невидимость в зоне (Взрыв 2) и дает Точность атакам по ним.",
+                "desc_en": "Disables invisibility in an area (Blast 2) and grants Accuracy to attacks against them.",
+                "range": "25"
+            }
+        ]
+    },
+    "Breacher": {
+        "name_ru": "Проломщик", "name_en": "Breacher",
+        "role": "Striker", "size": "1",
+        "tiers": {
+            "Tier 1": {"hp": 18, "eva": 9, "edef": 7, "spd": 3, "sen": 5, "save": 10},
+            "Tier 2": {"hp": 20, "eva": 11, "edef": 7, "spd": 4, "sen": 5, "save": 12},
+            "Tier 3": {"hp": 22, "eva": 13, "edef": 7, "spd": 5, "sen": 5, "save": 14}
+        },
+        "base_features":[
+            {
+                "name_ru": "Парные Дробовики", "name_en": "Dual Shotguns",
+                "type_ru": "Основное ОБД", "type_en": "Main CQB",
+                "desc_ru": "Урон: 6/8/10 Кинетического (Конус 3). Две атаки на 1 или 2 цели.",
+                "desc_en": "Damage: 6/8/10 Kinetic (Cone 3). Two attacks against 1 or 2 targets.",
+                "threat": "3"
+            },
+            {
+                "name_ru": "Проламывающий Таран", "name_en": "Breaching Ram",
+                "type_ru": "Система", "type_en": "System",
+                "desc_ru": "Рывок на 6 гексов. Пробивает укрытия, наносит им 10/20/30 ББ урона.",
+                "desc_en": "Dash 6 hexes. Breaches cover, dealing 10/20/30 AP damage to it."
+            }
+        ],
+        "optional_features":[
+            {
+                "name_ru": "Причинитель Боли", "name_en": "Painmaker",
+                "type_ru": "Черта", "type_en": "Trait",
+                "desc_ru": "Откладывает ход до конца хода врага, потом может атаковать 4 раза.",
+                "desc_en": "Delays turn until the end of the enemy's turn, then can attack 4 times."
+            }
+        ]
+    },
+    "Cataphract": {
+        "name_ru": "Катафракт", "name_en": "Cataphract",
+        "role": "Striker", "size": "1",
+        "tiers": {
+            "Tier 1": {"hp": 15, "eva": 10, "edef": 8, "spd": 8, "sen": 5, "save": 12},
+            "Tier 2": {"hp": 17, "eva": 11, "edef": 8, "spd": 8, "sen": 5, "save": 14},
+            "Tier 3": {"hp": 20, "eva": 12, "edef": 8, "spd": 8, "sen": 5, "save": 16}
+        },
+        "base_features":[
+            {
+                "name_ru": "Таранная Пушка", "name_en": "Ram Cannon",
+                "type_ru": "Тяжелое ОББ", "type_en": "Heavy Melee",
+                "desc_ru": "Урон: 5 Кинетического. (Линия 5).",
+                "desc_en": "Damage: 5 Kinetic. (Line 5).",
+                "threat": "2"
+            },
+            {
+                "name_ru": "Затапывание", "name_en": "Trample",
+                "type_ru": "Черта", "type_en": "Trait",
+                "desc_ru": "Игнорирует вовлеченность. При проходе через врагов наносит 2/3/4 урона.",
+                "desc_en": "Ignores engagement. Deals 2/3/4 damage when moving through enemies."
+            }
+        ],
+        "optional_features":[
+            {
+                "name_ru": "Электрифицированное Лассо", "name_en": "Electrified Lasso",
+                "type_ru": "Система", "type_en": "System",
+                "desc_ru": "Подтягивает и хватает цель.",
+                "desc_en": "Pulls and grapples the target.",
+                "range": "5"
+            },
+            {
+                "name_ru": "Пронзание", "name_en": "Impale",
+                "type_ru": "Система", "type_en": "System",
+                "desc_ru": "Движется по прямой на 8 гексов, тащит за собой врага.",
+                "desc_en": "Moves in a straight line 8 hexes, dragging the enemy."
+            }
+        ]
+    },
+    "Demolisher": {
+        "name_ru": "Разрушитель", "name_en": "Demolisher",
+        "role": "Defender", "size": "2",
+        "tiers": {
+            "Tier 1": {"hp": 15, "eva": 6, "edef": 7, "spd": 2, "sen": 10, "save": 10},
+            "Tier 2": {"hp": 20, "eva": 6, "edef": 7, "spd": 2, "sen": 10, "save": 13},
+            "Tier 3": {"hp": 25, "eva": 6, "edef": 7, "spd": 3, "sen": 10, "save": 15}
+        },
+        "base_features":[
+            {
+                "name_ru": "Отбойный Молот", "name_en": "Jackhammer",
+                "type_ru": "Сверхтяжелое ОББ", "type_en": "Superheavy Melee",
+                "desc_ru": "Урон: 10/14/16 Кинетического ББ. Сбивает с ног и Ошеломляет.",
+                "desc_en": "Damage: 10/14/16 Kinetic AP. Knocks prone and Stuns.",
+                "threat": "2"
+            },
+            {
+                "name_ru": "Окапывание", "name_en": "Dig In",
+                "type_ru": "Реакция", "type_en": "Reaction",
+                "desc_ru": "При атаке получает Сопротивляемость ко всему урону, но Замедляется.",
+                "desc_en": "Upon attack, gains Resistance to all damage, but is Slowed."
+            }
+        ],
+        "optional_features":[
+            {
+                "name_ru": "Шоковая Броня", "name_en": "Shock Armor",
+                "type_ru": "Черта", "type_en": "Trait",
+                "desc_ru": "Постоянная Сопротивляемость урону в ближнем бою.",
+                "desc_en": "Permanent Resistance to melee damage."
+            },
+            {
+                "name_ru": "Сейсмический Уничтожитель", "name_en": "Seismic Devastator",
+                "type_ru": "Система", "type_en": "System",
+                "desc_ru": "Сотрясает землю (Взрыв 3), Ошеломляя не летающих врагов.",
+                "desc_en": "Shakes the ground (Blast 3), Staggering non-flying enemies."
+            }
+        ]
+    },
+    "Engineer": {
+        "name_ru": "Инженер", "name_en": "Engineer",
+        "role": "Striker", "size": "1",
+        "tiers": {
+            "Tier 1": {"hp": 20, "eva": 7, "edef": 10, "spd": 3, "sen": 15, "save": 10},
+            "Tier 2": {"hp": 20, "eva": 9, "edef": 10, "spd": 3, "sen": 15, "save": 12},
+            "Tier 3": {"hp": 20, "eva": 11, "edef": 12, "spd": 3, "sen": 15, "save": 14}
+        },
+        "base_features":[
+            {
+                "name_ru": "Зенитная Пушка", "name_en": "Flak Cannon",
+                "type_ru": "Тяжелая Пушка", "type_en": "Heavy Cannon",
+                "desc_ru": "Урон: 3/4/5 Кинетического. +2 Точности против летающих.",
+                "desc_en": "Damage: 3/4/5 Kinetic. +2 Accuracy against flying.",
+                "range": "15"
+            },
+            {
+                "name_ru": "Размещаемая Турель", "name_en": "Deployable Turret",
+                "type_ru": "Дрон", "type_en": "Drone",
+                "desc_ru": "Ставит 자동 турель (Урон 4/5/6 в радиусе 10). Можно поставить до 6.",
+                "desc_en": "Deploys an auto-turret (Damage 4/5/6 in range 10). Can deploy up to 6."
+            }
+        ],
+        "optional_features":[
+            {
+                "name_ru": "Мощный Разместитель", "name_en": "Power Deployer",
+                "type_ru": "Черта", "type_en": "Trait",
+                "desc_ru": "Позволяет размещать сразу 2 турели за одно действие.",
+                "desc_en": "Allows deploying 2 turrets in one action."
+            },
+            {
+                "name_ru": "Метка Инженера", "name_en": "Engineer's Mark",
+                "type_ru": "Черта", "type_en": "Trait",
+                "desc_ru": "Помечает цель: все турели атакуют только её, игнорируя дальность.",
+                "desc_en": "Marks a target: all turrets attack only it, ignoring range."
+            }
+        ]
+    },
+    "Hive": {
+        "name_ru": "Улей", "name_en": "Hive",
+        "role": "Operator", "size": "1",
+        "tiers": {
+            "Tier 1": {"hp": 20, "eva": 8, "edef": 10, "spd": 5, "sen": 10, "save": 12},
+            "Tier 2": {"hp": 20, "eva": 8, "edef": 13, "spd": 5, "sen": 10, "save": 14},
+            "Tier 3": {"hp": 20, "eva": 10, "edef": 16, "spd": 5, "sen": 10, "save": 17}
+        },
+        "base_features":[
+            {
+                "name_ru": "Рои Бритв", "name_en": "Razor Swarms",
+                "type_ru": "Дрон", "type_en": "Drone",
+                "desc_ru": "Облако нанитов. Дает союзникам укрытие, наносит врагам 2/4/6 урона.",
+                "desc_en": "Nanite cloud. Gives allies cover, deals 2/4/6 damage to enemies."
+            },
+            {
+                "name_ru": "Звено Охотник-Убийца", "name_en": "Hunter-Killer Nexus",
+                "type_ru": "Основное Звено", "type_en": "Main Nexus",
+                "desc_ru": "Урон: 3 Энергетического. Умное, Искатель.",
+                "desc_en": "Damage: 3 Energy. Smart, Seeking.",
+                "range": "8"
+            }
+        ],
+        "optional_features":[
+            {
+                "name_ru": "Подвижный Рой", "name_en": "Motile Swarm",
+                "type_ru": "Черта", "type_en": "Trait",
+                "desc_ru": "В начале хода может подвинуть все Рои Бритв на 2 гекса.",
+                "desc_en": "At the start of the turn, can move all Razor Swarms 2 hexes."
+            },
+            {
+                "name_ru": "Заграждающий Дрон", "name_en": "Interdiction Drone",
+                "type_ru": "Тех. Атака", "type_en": "Tech Attack",
+                "desc_ru": "Обездвиживает и Ослабляет врага ИЛИ отбрасывает на 5 гексов.",
+                "desc_en": "Immobilizes and Impairs an enemy OR pushes 5 hexes."
+            }
+        ]
+    },
+    "Hornet": {
+        "name_ru": "Шершень", "name_en": "Hornet",
+        "role": "Operator", "size": "1/2",
+        "tiers": {
+            "Tier 1": {"hp": 8, "eva": 16, "edef": 6, "spd": 6, "sen": 5, "save": 12},
+            "Tier 2": {"hp": 8, "eva": 18, "edef": 7, "spd": 8, "sen": 5, "save": 14},
+            "Tier 3": {"hp": 8, "eva": 20, "edef": 8, "spd": 10, "sen": 5, "save": 16}
+        },
+        "base_features":[
+            {
+                "name_ru": "Пистолет Стингер", "name_en": "Stinger Pistol",
+                "type_ru": "Вспом. ОБД", "type_en": "Aux CQB",
+                "desc_ru": "Урон: 1/2/3 Энергетического. При попадании Ослабляет цель.",
+                "desc_en": "Damage: 1/2/3 Energy. On hit, Impairs the target.",
+                "range": "8"
+            },
+            {
+                "name_ru": "СШК Полный Комплект", "name_en": "Flight System",
+                "type_ru": "Система", "type_en": "System",
+                "desc_ru": "Шершень постоянно парит при движении (игнорирует землю).",
+                "desc_en": "Hornet constantly hovers when moving (ignores ground)."
+            }
+        ],
+        "optional_features":[
+            {
+                "name_ru": "Блокировка Джавелины", "name_en": "Javelin Lock",
+                "type_ru": "Система", "type_en": "System",
+                "desc_ru": "Обездвиживает и пригвождает цель к земле (Спасбросок Корпуса).",
+                "desc_en": "Immobilizes and pins target to the ground (Hull save)."
+            },
+            {
+                "name_ru": "Умбральный Перехват", "name_en": "Umbral Intercept",
+                "type_ru": "Реакция", "type_en": "Reaction",
+                "desc_ru": "Заставляет врага провалить атаку, если он не пройдет тест Систем.",
+                "desc_en": "Forces the enemy to miss the attack if they fail a Systems save."
+            }
+        ]
+    },
+    "Sniper": {
+        "name_ru": "Снайпер", "name_en": "Sniper",
+        "role": "Artillery", "size": "1",
+        "tiers": {
+            "Tier 1": {"hp": 10, "eva": 10, "edef": 8, "spd": 4, "sen": 15, "save": 11},
+            "Tier 2": {"hp": 12, "eva": 13, "edef": 9, "spd": 4, "sen": 15, "save": 13},
+            "Tier 3": {"hp": 14, "eva": 16, "edef": 10, "spd": 4, "sen": 15, "save": 15}
+        },
+        "base_features":[
+            {
+                "name_ru": "Крупнокал. Снайп. Винтовка", "name_en": "Anti-Materiel Rifle",
+                "type_ru": "Сверхтяжелая Винтовка", "type_en": "Superheavy Rifle",
+                "desc_ru": "Урон: 10/15/20 Кинетического ББ. Заряжаемое.",
+                "desc_en": "Damage: 10/15/20 Kinetic AP. Loading.",
+                "range": "25"
+            },
+            {
+                "name_ru": "Метка Снайпера", "name_en": "Sniper's Mark",
+                "type_ru": "Система", "type_en": "System",
+                "desc_ru": "Отмечает цель: винтовка наносит ей 1 структурный урон (сразу ломает).",
+                "desc_en": "Marks a target: rifle deals 1 structural damage to it (immediately breaks).",
+                "range": "25"
+            }
+        ],
+        "optional_features":[
+            {
+                "name_ru": "Альпинист", "name_en": "Climber",
+                "type_ru": "Черта", "type_en": "Trait",
+                "desc_ru": "Карабкается по стенам и потолку без штрафов.",
+                "desc_en": "Climbs walls and ceilings without penalty."
+            },
+            {
+                "name_ru": "Селективный Погрузчик", "name_en": "Selective Loader",
+                "type_ru": "Система", "type_en": "System",
+                "desc_ru": "Меняет тип патронов (ЭМИ, Вспышка, ББ) перед выстрелом.",
+                "desc_en": "Changes ammo type (EMP, Flash, AP) before firing."
+            }
+        ]
+    },
+    "Squad": {
+        "name_ru": "Отряд", "name_en": "Squad",
+        "role": "Biological", "size": "4",
+        "tiers": {
+            "Tier 1": {"hp": 10, "eva": 8, "edef": 8, "spd": 4, "sen": 5, "save": 10},
+            "Tier 2": {"hp": 15, "eva": 8, "edef": 8, "spd": 4, "sen": 5, "save": 10},
+            "Tier 3": {"hp": 20, "eva": 8, "edef": 8, "spd": 4, "sen": 5, "save": 10}
+        },
+        "base_features":[
+            {
+                "name_ru": "Главное Оружие", "name_en": "Main Weapon",
+                "type_ru": "Винтовка", "type_en": "Rifle",
+                "desc_ru": "Урон: 2/3/4 Кинетического. Делает 2 атаки, пока ХП больше 50%.",
+                "desc_en": "Damage: 2/3/4 Kinetic. Makes 2 attacks while HP is above 50%.",
+                "range": "5"
+            },
+            {
+                "name_ru": "Солдаты", "name_en": "Soldiers",
+                "type_ru": "Черта", "type_en": "Trait",
+                "desc_ru": "Действует как один персонаж (10 участников). Урон убивает участников.",
+                "desc_en": "Acts as one character (10 members). Damage kills members."
+            }
+        ],
+        "optional_features":[
+            {
+                "name_ru": "Пригнуться и Прикрыться", "name_en": "Duck and Cover",
+                "type_ru": "Реакция", "type_en": "Reaction",
+                "desc_ru": "Получает Сопротивляемость к урону, но Обездвиживается.",
+                "desc_en": "Gains Resistance to damage but becomes Immobilized."
+            }
+        ]
+    },
+    "Monster": {
+        "name_ru": "Чудовище", "name_en": "Monster",
+        "role": "Biological", "size": "2",
+        "tiers": {
+            "Tier 1": {"hp": 14, "eva": 10, "edef": 10, "spd": 6, "sen": 10, "save": 10},
+            "Tier 2": {"hp": 16, "eva": 12, "edef": 10, "spd": 7, "sen": 10, "save": 12},
+            "Tier 3": {"hp": 18, "eva": 15, "edef": 10, "spd": 8, "sen": 10, "save": 15}
+        },
+        "base_features":[
+            {
+                "name_ru": "Когти", "name_en": "Claws",
+                "type_ru": "ОББ", "type_en": "Melee",
+                "desc_ru": "Урон: 6/8/12 Кинетического. Быстрый ближний бой.",
+                "desc_en": "Damage: 6/8/12 Kinetic. Fast melee.",
+                "threat": "1"
+            },
+            {
+                "name_ru": "Уникальная Физиология", "name_en": "Unique Physiology",
+                "type_ru": "Черта", "type_en": "Trait",
+                "desc_ru": "Имеет структуру (если Элита). Броски на Расчленение (теряет конечности).",
+                "desc_en": "Has structure (if Elite). Rolls for Dismemberment (loses limbs)."
+            }
+        ],
+        "optional_features":[
+            {
+                "name_ru": "Кислотный Плевок", "name_en": "Acid Spittle",
+                "type_ru": "Пушка", "type_en": "Cannon",
+                "desc_ru": "Урон: 3/4/5 Энергетического. Расщепляет цель.",
+                "desc_en": "Damage: 3/4/5 Energy. Shreds the target.",
+                "range": "10"
+            },
+            {
+                "name_ru": "Естественный Камуфляж", "name_en": "Natural Camouflage",
+                "type_ru": "Черта", "type_en": "Trait",
+                "desc_ru": "Мягкое укрытие считается твердым. Становится Невидимым рядом с укрытием.",
+                "desc_en": "Soft cover counts as hard. Becomes Invisible adjacent to cover."
+            }
+        ]
+    }
+}
