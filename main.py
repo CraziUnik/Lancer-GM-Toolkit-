@@ -12,8 +12,8 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QTabWidget, QFrame, QLineEdit,
-    QSpinBox, QDoubleSpinBox, QComboBox, QFormLayout, QDialog, 
-    QDialogButtonBox, QTextEdit, QGroupBox, QListWidget, 
+    QSpinBox, QDoubleSpinBox, QComboBox, QFormLayout, QDialog,
+    QDialogButtonBox, QTextEdit, QGroupBox, QListWidget,
     QListWidgetItem, QListView, QProgressBar, QTextBrowser,
     QFileDialog, QScrollArea, QSlider, QAbstractItemView, QStackedWidget,
     QCheckBox, QGridLayout, QRadioButton, QMessageBox, QSizePolicy
@@ -84,13 +84,16 @@ LOCALE = {
     }
 }
 
+
 def TR(key): return LOCALE.get(LANG, LOCALE["RU"]).get(key, key)
+
 
 # --- ИКОНКИ РОЛЕЙ ---
 ROLE_ICONS = {
     "Striker": "⚔️", "Artillery": "🎯", "Defender": "🛡️",
     "Controller": "👁️", "Support": "🔧", "Biological": "🧬", "Player": "👤"
 }
+
 
 # --- ПОДДЕРЖКА ДВУЯЗЫЧНОГО JSON ---
 def loc(item, key):
@@ -99,6 +102,7 @@ def loc(item, key):
     lang_key = f"{key}_{LANG.lower()}"
     if lang_key in item and item[lang_key]: return str(item[lang_key])
     return str(item.get(key, ""))
+
 
 # --- ФОРМАТТЕР ТЕКСТА ПОД СТИЛЬ LANCER ---
 def format_lancer_text(text):
@@ -110,35 +114,57 @@ def format_lancer_text(text):
     bl = "Взрыв" if LANG == "RU" else "Blast"
     br = "Разрыв" if LANG == "RU" else "Burst"
 
-    text = re.sub(r'(?i)(Range|Дальность)\s*(\d+)', rf"<span style='background:#222; border:1px solid #4CAF50; color:#4CAF50; padding:1px 4px; border-radius:3px;'>⌖ {rg} \2</span>", text)
-    text = re.sub(r'(?i)(Threat|Угроза)\s*(\d+)', rf"<span style='background:#222; border:1px solid #F44336; color:#F44336; padding:1px 4px; border-radius:3px;'>⚔️ {th} \2</span>", text)
-    text = re.sub(r'(?i)(Line|Линия)\s*(\d+)', rf"<span style='background:#222; border:1px solid #00E5FF; color:#00E5FF; padding:1px 4px; border-radius:3px;'>➖ {ln} \2</span>", text)
-    text = re.sub(r'(?i)(Cone|Конус)\s*(\d+)', rf"<span style='background:#222; border:1px solid #FF9800; color:#FF9800; padding:1px 4px; border-radius:3px;'>📐 {cn} \2</span>", text)
-    text = re.sub(r'(?i)(Blast|Взрыв)\s*(\d+)', rf"<span style='background:#222; border:1px solid #FF5722; color:#FF5722; padding:1px 4px; border-radius:3px;'>💥 {bl} \2</span>", text)
-    text = re.sub(r'(?i)(Burst|Разрыв)\s*(\d+)', rf"<span style='background:#222; border:1px solid #9C27B0; color:#9C27B0; padding:1px 4px; border-radius:3px;'>🎇 {br} \2</span>", text)
-    
+    text = re.sub(r'(?i)(Range|Дальность)\s*(\d+)',
+                  rf"<span style='background:#222; border:1px solid #4CAF50; color:#4CAF50; padding:1px 4px; border-radius:3px;'>⌖ {rg} \2</span>",
+                  text)
+    text = re.sub(r'(?i)(Threat|Угроза)\s*(\d+)',
+                  rf"<span style='background:#222; border:1px solid #F44336; color:#F44336; padding:1px 4px; border-radius:3px;'>⚔️ {th} \2</span>",
+                  text)
+    text = re.sub(r'(?i)(Line|Линия)\s*(\d+)',
+                  rf"<span style='background:#222; border:1px solid #00E5FF; color:#00E5FF; padding:1px 4px; border-radius:3px;'>➖ {ln} \2</span>",
+                  text)
+    text = re.sub(r'(?i)(Cone|Конус)\s*(\d+)',
+                  rf"<span style='background:#222; border:1px solid #FF9800; color:#FF9800; padding:1px 4px; border-radius:3px;'>📐 {cn} \2</span>",
+                  text)
+    text = re.sub(r'(?i)(Blast|Взрыв)\s*(\d+)',
+                  rf"<span style='background:#222; border:1px solid #FF5722; color:#FF5722; padding:1px 4px; border-radius:3px;'>💥 {bl} \2</span>",
+                  text)
+    text = re.sub(r'(?i)(Burst|Разрыв)\s*(\d+)',
+                  rf"<span style='background:#222; border:1px solid #9C27B0; color:#9C27B0; padding:1px 4px; border-radius:3px;'>🎇 {br} \2</span>",
+                  text)
+
     kin = "Кинетика" if LANG == "RU" else "Kinetic"
     ene = "Энергия" if LANG == "RU" else "Energy"
     exp = "Взрыв" if LANG == "RU" else "Explosive"
     brn = "Горение" if LANG == "RU" else "Burn"
     hea = "Нагрев" if LANG == "RU" else "Heat"
 
-    text = re.sub(r'(\d+d\d+(?:\+\d+)?|\d+)\s*(Кинетического|Кинетический|Kinetic)', rf"<b><span style='color:#B0BEC5;'>\1 ⚙️ {kin}</span></b>", text, flags=re.IGNORECASE)
-    text = re.sub(r'(\d+d\d+(?:\+\d+)?|\d+)\s*(Энергетического|Энергетический|Energy)', rf"<b><span style='color:#40C4FF;'>\1 ⚡ {ene}</span></b>", text, flags=re.IGNORECASE)
-    text = re.sub(r'(\d+d\d+(?:\+\d+)?|\d+)\s*(Взрывного|Взрывной|Explosive)', rf"<b><span style='color:#FFCA28;'>\1 💣 {exp}</span></b>", text, flags=re.IGNORECASE)
-    text = re.sub(r'(\d+d\d+(?:\+\d+)?|\d+)\s*(Горения|Burn)', rf"<b><span style='color:#EF5350;'>\1 🔥 {brn}</span></b>", text, flags=re.IGNORECASE)
-    text = re.sub(r'(\d+d\d+(?:\+\d+)?|\d+)\s*(Нагрева|Heat)', rf"<b><span style='color:#FF7043;'>\1 🌡️ {hea}</span></b>", text, flags=re.IGNORECASE)
-    
+    text = re.sub(r'(\d+d\d+(?:\+\d+)?|\d+)\s*(Кинетического|Кинетический|Kinetic)',
+                  rf"<b><span style='color:#B0BEC5;'>\1 ⚙️ {kin}</span></b>", text, flags=re.IGNORECASE)
+    text = re.sub(r'(\d+d\d+(?:\+\d+)?|\d+)\s*(Энергетического|Энергетический|Energy)',
+                  rf"<b><span style='color:#40C4FF;'>\1 ⚡ {ene}</span></b>", text, flags=re.IGNORECASE)
+    text = re.sub(r'(\d+d\d+(?:\+\d+)?|\d+)\s*(Взрывного|Взрывной|Explosive)',
+                  rf"<b><span style='color:#FFCA28;'>\1 💣 {exp}</span></b>", text, flags=re.IGNORECASE)
+    text = re.sub(r'(\d+d\d+(?:\+\d+)?|\d+)\s*(Горения|Burn)',
+                  rf"<b><span style='color:#EF5350;'>\1 🔥 {brn}</span></b>", text, flags=re.IGNORECASE)
+    text = re.sub(r'(\d+d\d+(?:\+\d+)?|\d+)\s*(Нагрева|Heat)',
+                  rf"<b><span style='color:#FF7043;'>\1 🌡️ {hea}</span></b>", text, flags=re.IGNORECASE)
+
     text = re.sub(r'\b(ББ|AP)\b', r"<span style='color:#FF3366; font-weight:bold;'>[AP]</span>", text)
     return text
+
 
 def load_npc_database():
     file_name = "npcs.json"
     try:
-        with open(file_name, "r", encoding="utf-8") as f: return json.load(f)
-    except: return {}
+        with open(file_name, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except:
+        return {}
+
 
 NPC_PRESETS = load_npc_database()
+
 
 # --- ПАРСЕР COMP/CON ---
 def translate_compcon(text):
@@ -156,14 +182,15 @@ def translate_compcon(text):
         text = re.sub(rf'\b{eng}\b', rus, text, flags=re.IGNORECASE)
     return text
 
+
 def parse_compcon(text, faction="player"):
     text_translated = translate_compcon(text)
-    
+
     data = {
         "name": "PC", "hp": 10, "evasion": 10, "edef": 10, "speed": 4,
         "sensors": 10, "save": 10, "size": "1", "tier": "PC",
         "role": "Player", "modifier": "Base", "faction": faction,
-        "base_features":[], "optional_features":[]
+        "base_features": [], "optional_features": []
     }
 
     callsign_match = re.search(r'»\s*.*?//\s*(.*?)\s*«', text)
@@ -173,7 +200,8 @@ def parse_compcon(text, faction="player"):
         name_match = re.search(r'-- (.*?) @', text)
         if name_match: data["name"] = name_match.group(1).strip()
 
-    for stat, key in[('HP', 'hp'), ('EVA', 'evasion'), ('EDEF', 'edef'), ('SPD', 'speed'), ('SENS', 'sensors'), ('SAVE', 'save')]:
+    for stat, key in [('HP', 'hp'), ('EVA', 'evasion'), ('EDEF', 'edef'), ('SPD', 'speed'), ('SENS', 'sensors'),
+                      ('SAVE', 'save')]:
         m = re.search(rf'{stat}:\s*(\d+)', text)
         if m: data[key] = int(m.group(1))
 
@@ -182,8 +210,10 @@ def parse_compcon(text, faction="player"):
 
     m_armor = re.search(r'ARMOR:\s*(\d+)', text)
     if m_armor:
-        nm = "Броня" if LANG=="RU" else "Armor"
-        data["base_features"].append({"name_ru": nm, "name_en": nm, "type_ru": "Стат", "type_en": "Stat", "desc_ru": f"{m_armor.group(1)}", "desc_en": f"{m_armor.group(1)}"})
+        nm = "Броня" if LANG == "RU" else "Armor"
+        data["base_features"].append(
+            {"name_ru": nm, "name_en": nm, "type_ru": "Стат", "type_en": "Stat", "desc_ru": f"{m_armor.group(1)}",
+             "desc_en": f"{m_armor.group(1)}"})
 
     def extract_section(header):
         m = re.search(rf'\[ {header} \](.*?)(?=\[|$)', text_translated, re.DOTALL)
@@ -193,19 +223,28 @@ def parse_compcon(text, faction="player"):
     systems = extract_section('SYSTEMS')
     talents = extract_section('TALENTS')
 
-    if weapons: data["base_features"].append({"name_ru": "Оружие", "name_en": "Weapons", "type_ru": "Снаряжение", "type_en": "Gear", "desc_ru": weapons, "desc_en": weapons})
-    if systems: data["base_features"].append({"name_ru": "Системы", "name_en": "Systems", "type_ru": "Снаряжение", "type_en": "Gear", "desc_ru": systems, "desc_en": systems})
-    if talents: data["optional_features"].append({"name_ru": "Таланты", "name_en": "Talents", "type_ru": "Навык", "type_en": "Skill", "desc_ru": talents, "desc_en": talents})
+    if weapons: data["base_features"].append(
+        {"name_ru": "Оружие", "name_en": "Weapons", "type_ru": "Снаряжение", "type_en": "Gear", "desc_ru": weapons,
+         "desc_en": weapons})
+    if systems: data["base_features"].append(
+        {"name_ru": "Системы", "name_en": "Systems", "type_ru": "Снаряжение", "type_en": "Gear", "desc_ru": systems,
+         "desc_en": systems})
+    if talents: data["optional_features"].append(
+        {"name_ru": "Таланты", "name_en": "Talents", "type_ru": "Навык", "type_en": "Skill", "desc_ru": talents,
+         "desc_en": talents})
 
     return data
+
 
 def expand_tier_values(text, tier):
     def replacer(match):
         parts = match.group(1).split('/')
-        if len(parts) == 3 and tier in (1,2,3):
-            return parts[tier-1]
+        if len(parts) == 3 and tier in (1, 2, 3):
+            return parts[tier - 1]
         return match.group(0)
+
     return re.sub(r'\b(\d+(?:/\d+)+)\b', replacer, text)
+
 
 def format_feature_with_stats(feature, tier):
     name = loc(feature, 'name')
@@ -216,7 +255,7 @@ def format_feature_with_stats(feature, tier):
 
     range_str = feature.get('range', '')
     threat_str = feature.get('threat', '')
-    stats =[]
+    stats = []
     if range_str: stats.append(f"⌖ {range_str}")
     if threat_str: stats.append(f"⚔️ {threat_str}")
     stat_line = f"<span style='color:#aaa; font-size:10px;'> {' | '.join(stats)}</span>" if stats else ""
@@ -229,6 +268,7 @@ def format_feature_with_stats(feature, tier):
         <span>{desc}</span>
     </div>
     """
+
 
 # --- КАРТОЧКА ПЕРСОНАЖА ---
 class CombatantCard(QFrame):
@@ -244,18 +284,23 @@ class CombatantCard(QFrame):
         self.current_hp = data.get("current_hp", self.max_hp)
         self.is_dead = False
         self.has_acted = data.get("has_acted", False)
-        
+
         self.tier_num = 1
         tier_str = data.get("tier", "Tier 1")
-        if "Tier 2" in tier_str: self.tier_num = 2
-        elif "Tier 3" in tier_str: self.tier_num = 3
+        if "Tier 2" in tier_str:
+            self.tier_num = 2
+        elif "Tier 3" in tier_str:
+            self.tier_num = 3
 
         self.setFixedSize(250, 390)
         self.setObjectName("CardFrame")
 
-        if data.get("faction") == "player": self.color_hex = "#00E5FF"
-        elif data.get("faction") == "ally": self.color_hex = "#00E676"
-        else: self.color_hex = "#FF3366"
+        if data.get("faction") == "player":
+            self.color_hex = "#00E5FF"
+        elif data.get("faction") == "ally":
+            self.color_hex = "#00E676"
+        else:
+            self.color_hex = "#FF3366"
 
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(8, 8, 8, 8)
@@ -270,7 +315,7 @@ class CombatantCard(QFrame):
     def _build_front_page(self, is_preview):
         front_widget = QWidget()
         layout = QVBoxLayout(front_widget)
-        layout.setContentsMargins(0,0,0,0)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(6)
 
         header = QHBoxLayout()
@@ -285,7 +330,7 @@ class CombatantCard(QFrame):
 
         self.name_lbl = QLabel(f"{role_icon} {display_name}")
         self.name_lbl.setStyleSheet(f"font-weight: bold; font-size: 13px; color: {self.color_hex};")
-        
+
         self.btn_copy = QPushButton("📋")
         self.btn_copy.setFixedSize(20, 20)
         self.btn_copy.setToolTip("Copy UID")
@@ -344,10 +389,11 @@ class CombatantCard(QFrame):
         layout.addLayout(hp_ctrl)
 
         abilities_browser = QTextBrowser()
-        abilities_browser.setStyleSheet("QTextBrowser { background: #161616; color: #ccc; border: 1px solid #333; border-radius: 4px; padding: 4px; font-size: 11px;}")
-        
+        abilities_browser.setStyleSheet(
+            "QTextBrowser { background: #161616; color: #ccc; border: 1px solid #333; border-radius: 4px; padding: 4px; font-size: 11px;}")
+
         html_content = f"<div style='color:#00E5FF; font-weight:bold; margin-bottom:4px;'>{TR('base_sys')}</div>"
-        for feat in self.data.get("base_features",[]):
+        for feat in self.data.get("base_features", []):
             html_content += format_feature_with_stats(feat, self.tier_num)
         abilities_browser.setHtml(html_content)
         layout.addWidget(abilities_browser)
@@ -358,7 +404,7 @@ class CombatantCard(QFrame):
         layout.addWidget(btn_flip)
 
         bottom_ctrl = QHBoxLayout()
-        self.btn_act = QPushButton("End Turn" if LANG=="EN" else "Завершить ход")
+        self.btn_act = QPushButton("End Turn" if LANG == "EN" else "Завершить ход")
         self.btn_act.setCheckable(True)
         self.btn_act.setChecked(self.has_acted)
         self.btn_act.clicked.connect(self.toggle_act)
@@ -373,8 +419,11 @@ class CombatantCard(QFrame):
         layout.addLayout(bottom_ctrl)
 
         if is_preview:
-            self.btn_l.hide(); self.btn_r.hide(); self.btn_copy.hide()
-            self.btn_act.hide(); self.btn_del.hide()
+            self.btn_l.hide();
+            self.btn_r.hide();
+            self.btn_copy.hide()
+            self.btn_act.hide();
+            self.btn_del.hide()
             hp_ctrl.itemAt(0).widget().hide()
             hp_ctrl.itemAt(1).widget().hide()
 
@@ -383,28 +432,29 @@ class CombatantCard(QFrame):
     def _build_back_page(self, is_preview):
         back_widget = QWidget()
         layout = QVBoxLayout(back_widget)
-        layout.setContentsMargins(0,0,0,0)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
 
         role_icon = ROLE_ICONS.get(self.data.get("role", "Player"), "🤖")
         display_name = self.data.get('display_name', self.data.get('name_ru', self.data.get('name', '???')))
-        
+
         name_lbl = QLabel(f"🔄 {role_icon} {display_name}")
         name_lbl.setStyleSheet(f"font-weight: bold; font-size: 11px; color: {self.color_hex};")
         layout.addWidget(name_lbl)
 
         abilities_browser = QTextBrowser()
-        abilities_browser.setStyleSheet("QTextBrowser { background: #161616; color: #ccc; border: 1px solid #333; border-radius: 4px; padding: 4px; font-size: 11px;}")
+        abilities_browser.setStyleSheet(
+            "QTextBrowser { background: #161616; color: #ccc; border: 1px solid #333; border-radius: 4px; padding: 4px; font-size: 11px;}")
 
         html_content = ""
         if self.data.get("template_features"):
             html_content += f"<div style='color:#FF3366; font-weight:bold; margin-bottom:4px;'>TEMPLATES</div>"
-            for feat in self.data.get("template_features",[]):
+            for feat in self.data.get("template_features", []):
                 html_content += format_feature_with_stats(feat, self.tier_num)
             html_content += "<hr style='border: 0; border-top: 1px dashed #333; margin: 4px 0;'>"
 
         html_content += f"<div style='color:#00E676; font-weight:bold; margin-bottom:4px;'>{TR('opt_sys')}</div>"
-        for feat in self.data.get("optional_features",[]):
+        for feat in self.data.get("optional_features", []):
             html_content += format_feature_with_stats(feat, self.tier_num)
 
         abilities_browser.setHtml(html_content)
@@ -452,9 +502,12 @@ class CombatantCard(QFrame):
             QPushButton:hover {{ background-color: #444; border: 1px solid {self.color_hex};}}
             QPushButton:checked {{ background-color: #222; border: 1px solid {self.color_hex}; color: {self.color_hex}; font-weight: bold; }}
         """)
-        if self.is_dead: self.name_lbl.setStyleSheet("color: #666; font-weight: bold; text-decoration: line-through;")
-        else: self.name_lbl.setStyleSheet(f"color: {self.color_hex}; font-weight: bold;")
+        if self.is_dead:
+            self.name_lbl.setStyleSheet("color: #666; font-weight: bold; text-decoration: line-through;")
+        else:
+            self.name_lbl.setStyleSheet(f"color: {self.color_hex}; font-weight: bold;")
         self.hp_changed.emit(self)
+
 
 # --- ДИАЛОГИ ---
 class ImportDialog(QDialog):
@@ -486,10 +539,14 @@ class ImportDialog(QDialog):
         layout.addWidget(btns)
 
     def get_data(self):
-        if self.radio_player.isChecked(): faction = "player"
-        elif self.radio_enemy.isChecked(): faction = "enemy"
-        else: faction = "ally"
+        if self.radio_player.isChecked():
+            faction = "player"
+        elif self.radio_enemy.isChecked():
+            faction = "enemy"
+        else:
+            faction = "ally"
         return parse_compcon(self.text_edit.toPlainText(), faction=faction)
+
 
 class AddNpcDialog(QDialog):
     def __init__(self, parent=None):
@@ -501,7 +558,7 @@ class AddNpcDialog(QDialog):
         form = QFormLayout()
         self.faction_combo = QComboBox()
         self.faction_combo.addItems(["Enemy", "Ally", "Player"])
-        
+
         self.class_combo = QComboBox()
         for key, preset in sorted(NPC_PRESETS.items()):
             name = loc(preset, "name")
@@ -512,15 +569,31 @@ class AddNpcDialog(QDialog):
         self.tier_combo.addItems(["Tier 1", "Tier 2", "Tier 3"])
 
         stats_layout = QGridLayout()
-        self.hp_input = QSpinBox(); self.hp_input.setRange(1, 500); self.hp_input.setPrefix("HP: ")
-        self.eva_input = QSpinBox(); self.eva_input.setRange(1, 30); self.eva_input.setPrefix("EV: ")
-        self.edef_input = QSpinBox(); self.edef_input.setRange(1, 30); self.edef_input.setPrefix("ED: ")
-        self.spd_input = QSpinBox(); self.spd_input.setRange(1, 20); self.spd_input.setPrefix("SP: ")
-        self.sen_input = QSpinBox(); self.sen_input.setRange(1, 30); self.sen_input.setPrefix("SEN: ")
-        self.sav_input = QSpinBox(); self.sav_input.setRange(1, 20); self.sav_input.setPrefix("SAV: ")
+        self.hp_input = QSpinBox();
+        self.hp_input.setRange(1, 500);
+        self.hp_input.setPrefix("HP: ")
+        self.eva_input = QSpinBox();
+        self.eva_input.setRange(1, 30);
+        self.eva_input.setPrefix("EV: ")
+        self.edef_input = QSpinBox();
+        self.edef_input.setRange(1, 30);
+        self.edef_input.setPrefix("ED: ")
+        self.spd_input = QSpinBox();
+        self.spd_input.setRange(1, 20);
+        self.spd_input.setPrefix("SP: ")
+        self.sen_input = QSpinBox();
+        self.sen_input.setRange(1, 30);
+        self.sen_input.setPrefix("SEN: ")
+        self.sav_input = QSpinBox();
+        self.sav_input.setRange(1, 20);
+        self.sav_input.setPrefix("SAV: ")
 
-        stats_layout.addWidget(self.hp_input, 0, 0); stats_layout.addWidget(self.eva_input, 0, 1); stats_layout.addWidget(self.edef_input, 0, 2)
-        stats_layout.addWidget(self.spd_input, 1, 0); stats_layout.addWidget(self.sen_input, 1, 1); stats_layout.addWidget(self.sav_input, 1, 2)
+        stats_layout.addWidget(self.hp_input, 0, 0);
+        stats_layout.addWidget(self.eva_input, 0, 1);
+        stats_layout.addWidget(self.edef_input, 0, 2)
+        stats_layout.addWidget(self.spd_input, 1, 0);
+        stats_layout.addWidget(self.sen_input, 1, 1);
+        stats_layout.addWidget(self.sav_input, 1, 2)
 
         self.size_input = QLineEdit("1")
 
@@ -534,30 +607,40 @@ class AddNpcDialog(QDialog):
 
         template_box = QGroupBox("Templates")
         grid = QGridLayout(template_box)
-        self.chk_grunt = QCheckBox("Grunt" if LANG=="EN" else "Салага")
-        self.chk_elite = QCheckBox("Elite" if LANG=="EN" else "Элита")
-        self.chk_ultra = QCheckBox("Ultra" if LANG=="EN" else "Ультра")
-        self.chk_veteran = QCheckBox("Veteran" if LANG=="EN" else "Ветеран")
-        self.chk_commander = QCheckBox("Commander" if LANG=="EN" else "Командир")
-        self.chk_exot = QCheckBox("Exot" if LANG=="EN" else "Экзот")
-        self.chk_merc = QCheckBox("Mercenary" if LANG=="EN" else "Наемник")
-        self.chk_pirate = QCheckBox("Pirate" if LANG=="EN" else "Пират")
-        self.chk_ship = QCheckBox("Ship" if LANG=="EN" else "Корабль")
-        self.chk_vehicle = QCheckBox("Vehicle" if LANG=="EN" else "Транспорт")
+        self.chk_grunt = QCheckBox("Grunt" if LANG == "EN" else "Салага")
+        self.chk_elite = QCheckBox("Elite" if LANG == "EN" else "Элита")
+        self.chk_ultra = QCheckBox("Ultra" if LANG == "EN" else "Ультра")
+        self.chk_veteran = QCheckBox("Veteran" if LANG == "EN" else "Ветеран")
+        self.chk_commander = QCheckBox("Commander" if LANG == "EN" else "Командир")
+        self.chk_exot = QCheckBox("Exot" if LANG == "EN" else "Экзот")
+        self.chk_merc = QCheckBox("Mercenary" if LANG == "EN" else "Наемник")
+        self.chk_pirate = QCheckBox("Pirate" if LANG == "EN" else "Пират")
+        self.chk_ship = QCheckBox("Ship" if LANG == "EN" else "Корабль")
+        self.chk_vehicle = QCheckBox("Vehicle" if LANG == "EN" else "Транспорт")
 
-        grid.addWidget(self.chk_grunt, 0, 0); grid.addWidget(self.chk_elite, 0, 1)
-        grid.addWidget(self.chk_ultra, 0, 2); grid.addWidget(self.chk_veteran, 1, 0)
-        grid.addWidget(self.chk_commander, 1, 1); grid.addWidget(self.chk_exot, 1, 2)
-        grid.addWidget(self.chk_merc, 2, 0); grid.addWidget(self.chk_pirate, 2, 1)
-        grid.addWidget(self.chk_ship, 3, 0); grid.addWidget(self.chk_vehicle, 3, 1)
+        grid.addWidget(self.chk_grunt, 0, 0);
+        grid.addWidget(self.chk_elite, 0, 1)
+        grid.addWidget(self.chk_ultra, 0, 2);
+        grid.addWidget(self.chk_veteran, 1, 0)
+        grid.addWidget(self.chk_commander, 1, 1);
+        grid.addWidget(self.chk_exot, 1, 2)
+        grid.addWidget(self.chk_merc, 2, 0);
+        grid.addWidget(self.chk_pirate, 2, 1)
+        grid.addWidget(self.chk_ship, 3, 0);
+        grid.addWidget(self.chk_vehicle, 3, 1)
 
-        self.chk_grunt.toggled.connect(lambda: [c.setChecked(False) for c in[self.chk_elite, self.chk_ultra, self.chk_veteran, self.chk_commander] if self.chk_grunt.isChecked()])
-        self.chk_elite.toggled.connect(lambda:[c.setChecked(False) for c in [self.chk_grunt, self.chk_ultra] if self.chk_elite.isChecked()])
-        self.chk_ultra.toggled.connect(lambda:[c.setChecked(False) for c in [self.chk_grunt, self.chk_elite] if self.chk_ultra.isChecked()])
+        self.chk_grunt.toggled.connect(
+            lambda: [c.setChecked(False) for c in [self.chk_elite, self.chk_ultra, self.chk_veteran, self.chk_commander]
+                     if self.chk_grunt.isChecked()])
+        self.chk_elite.toggled.connect(
+            lambda: [c.setChecked(False) for c in [self.chk_grunt, self.chk_ultra] if self.chk_elite.isChecked()])
+        self.chk_ultra.toggled.connect(
+            lambda: [c.setChecked(False) for c in [self.chk_grunt, self.chk_elite] if self.chk_ultra.isChecked()])
         self.chk_ship.toggled.connect(lambda: self.chk_vehicle.setChecked(False) if self.chk_ship.isChecked() else None)
-        self.chk_vehicle.toggled.connect(lambda: self.chk_ship.setChecked(False) if self.chk_vehicle.isChecked() else None)
+        self.chk_vehicle.toggled.connect(
+            lambda: self.chk_ship.setChecked(False) if self.chk_vehicle.isChecked() else None)
 
-        for chk in[self.chk_grunt, self.chk_elite, self.chk_ultra, self.chk_ship, self.chk_vehicle]:
+        for chk in [self.chk_grunt, self.chk_elite, self.chk_ultra, self.chk_ship, self.chk_vehicle]:
             chk.toggled.connect(self.update_stats)
 
         layout.addWidget(template_box)
@@ -573,7 +656,7 @@ class AddNpcDialog(QDialog):
         self.update_stats()
 
     def auto_name(self):
-        if self.faction_combo.currentIndex() == 2: # Player
+        if self.faction_combo.currentIndex() == 2:  # Player
             self.name_input.setText("")
         else:
             self.name_input.setText(self.class_combo.currentText())
@@ -587,9 +670,12 @@ class AddNpcDialog(QDialog):
         base_hp = stats.get("hp", 10)
         size = preset.get("size", "1")
 
-        if self.chk_grunt.isChecked(): base_hp = 1
-        elif self.chk_ultra.isChecked(): base_hp = int(base_hp * 4)
-        elif self.chk_elite.isChecked(): base_hp = int(base_hp * 2)
+        if self.chk_grunt.isChecked():
+            base_hp = 1
+        elif self.chk_ultra.isChecked():
+            base_hp = int(base_hp * 4)
+        elif self.chk_elite.isChecked():
+            base_hp = int(base_hp * 2)
 
         if self.chk_ship.isChecked():
             base_hp += 5
@@ -605,7 +691,7 @@ class AddNpcDialog(QDialog):
 
         if self.faction_combo.currentIndex() != 2:
             current_name = self.name_input.text()
-            display_names =[loc(p, "name") for p in NPC_PRESETS.values()]
+            display_names = [loc(p, "name") for p in NPC_PRESETS.values()]
             if not current_name or current_name in display_names:
                 self.name_input.setText(self.class_combo.currentText())
 
@@ -615,13 +701,15 @@ class AddNpcDialog(QDialog):
         key = self.class_combo.currentData()
         preset = NPC_PRESETS.get(key, list(NPC_PRESETS.values())[0])
 
-        templates_applied =[]
-        t_feats =[]
-        
+        templates_applied = []
+        t_feats = []
+
         def add_tpl(chk, n_ru, n_en, d_ru, d_en):
             if chk.isChecked():
-                templates_applied.append(n_en if LANG=="EN" else n_ru)
-                t_feats.append({"name_ru": n_ru, "name_en": n_en, "type_ru":"Шаблон", "type_en":"Template", "desc_ru": d_ru, "desc_en": d_en})
+                templates_applied.append(n_en if LANG == "EN" else n_ru)
+                t_feats.append(
+                    {"name_ru": n_ru, "name_en": n_en, "type_ru": "Шаблон", "type_en": "Template", "desc_ru": d_ru,
+                     "desc_en": d_en})
 
         add_tpl(self.chk_grunt, "Салага", "Grunt", "1 ПЗ.", "1 HP.")
         add_tpl(self.chk_elite, "Элита", "Elite", "2 хода за раунд.", "2 turns/round.")
@@ -647,10 +735,11 @@ class AddNpcDialog(QDialog):
             "tier_display": tier_display,
             "size": self.size_input.text(),
             "role": preset.get("role", "Player"),
-            "base_features": preset.get("base_features",[]),
-            "optional_features": preset.get("optional_features",[]),
+            "base_features": preset.get("base_features", []),
+            "optional_features": preset.get("optional_features", []),
             "template_features": t_feats
         }
+
 
 # --- ВКЛАДКА 1: БОЕВОЙ ТРЕКЕР ---
 class CombatTracker(QWidget):
@@ -658,7 +747,7 @@ class CombatTracker(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.combatants =[]
+        self.combatants = []
         layout = QVBoxLayout(self)
 
         toolbar = QHBoxLayout()
@@ -679,7 +768,7 @@ class CombatTracker(QWidget):
         btn_next.setStyleSheet("background-color: #00897B; color: white; font-weight: bold; font-size: 14px;")
         btn_next.clicked.connect(self.next_round)
 
-        for btn in[btn_import, btn_add, btn_save, btn_load]:
+        for btn in [btn_import, btn_add, btn_save, btn_load]:
             toolbar.addWidget(btn)
 
         toolbar.addStretch()
@@ -756,14 +845,14 @@ class CombatTracker(QWidget):
         if not is_rebuild:
             base_name = data["name"].strip()
             highest_num = 0
-            
+
             for c in self.combatants:
                 c_name = c['card'].data.get("name", "")
                 m = re.match(rf"^{re.escape(base_name)}(?: (\d+))?$", c_name)
                 if m:
                     num = m.group(1)
                     highest_num = max(highest_num, int(num) if num else 1)
-            
+
             if highest_num > 0:
                 data["name"] = f"{base_name} {highest_num + 1}"
                 if highest_num == 1:
@@ -774,7 +863,7 @@ class CombatTracker(QWidget):
                             role_icon = ROLE_ICONS.get(c['card'].data.get("role", "Player"), "🤖")
                             c['card'].name_lbl.setText(f"{role_icon} {c['card'].data['display_name']}")
                             break
-            
+
             if 'uid' not in data:
                 data['uid'] = self.generate_uid()
             data['display_name'] = f"{data['name']}"
@@ -784,14 +873,14 @@ class CombatTracker(QWidget):
         card.deleted.connect(self.remove_card)
         card.move_up.connect(lambda c: self.move_item(c, -1))
         card.move_down.connect(lambda c: self.move_item(c, 1))
-        
+
         item = QListWidgetItem(self.card_list)
-        item.setSizeHint(QSize(250, 390)) 
+        item.setSizeHint(QSize(250, 390))
         self.card_list.addItem(item)
         self.card_list.setItemWidget(item, card)
-        
+
         self.combatants.append({'card': card, 'item': item})
-        
+
         self.update_arrows()
         self.update_timeline()
         if not is_rebuild:
@@ -800,7 +889,7 @@ class CombatTracker(QWidget):
     def remove_card(self, card):
         for c in self.combatants:
             if c['card'] == card:
-                card.setParent(None) 
+                card.setParent(None)
                 row = self.card_list.row(c['item'])
                 self.card_list.takeItem(row)
                 self.combatants.remove(c)
@@ -815,8 +904,8 @@ class CombatTracker(QWidget):
             for c in self.combatants:
                 c['card'].data['current_hp'] = c['card'].current_hp
                 c['card'].data['has_acted'] = c['card'].has_acted
-                
-            encounter_data =[c['card'].data for c in self.combatants]
+
+            encounter_data = [c['card'].data for c in self.combatants]
             try:
                 with open(file_path, 'w', encoding='utf-8') as f:
                     json.dump(encounter_data, f, ensure_ascii=False, indent=4)
@@ -829,11 +918,11 @@ class CombatTracker(QWidget):
             try:
                 with open(file_path, 'r', encoding='utf-8') as f:
                     encounter_data = json.load(f)
-                
+
                 for c in self.combatants: c['card'].setParent(None)
                 self.card_list.clear()
                 self.combatants.clear()
-                
+
                 for data in encounter_data:
                     self.add_card(data, is_rebuild=True)
             except Exception as e:
@@ -843,12 +932,13 @@ class CombatTracker(QWidget):
         for i in reversed(range(self.timeline.count())):
             widget = self.timeline.itemAt(i).widget()
             if widget: widget.setParent(None)
-            
+
         for c in self.combatants:
             card = c['card']
             if not card.is_dead and not card.has_acted:
                 lbl = QLabel(card.data.get("display_name", card.data.get("name", "Unknown")))
-                lbl.setStyleSheet(f"background-color: {card.color_hex}; color: #000; padding: 4px 10px; border-radius: 8px; font-weight: bold; font-size: 11px;")
+                lbl.setStyleSheet(
+                    f"background-color: {card.color_hex}; color: #000; padding: 4px 10px; border-radius: 8px; font-weight: bold; font-size: 11px;")
                 self.timeline.addWidget(lbl)
 
     def next_round(self):
@@ -856,7 +946,7 @@ class CombatTracker(QWidget):
             if not c['card'].is_dead:
                 c['card'].btn_act.setChecked(False)
                 c['card'].has_acted = False
-                c['card'].data['has_acted'] = False 
+                c['card'].data['has_acted'] = False
         self.update_timeline()
 
 
@@ -950,9 +1040,13 @@ class EncounterBuilder(QWidget):
         left_panel = QVBoxLayout()
         settings_box = QGroupBox(TR("grp_settings"))
         s_layout = QFormLayout(settings_box)
-        self.players_spin = QSpinBox(); self.players_spin.setRange(1, 8); self.players_spin.setValue(4)
+        self.players_spin = QSpinBox();
+        self.players_spin.setRange(1, 8);
+        self.players_spin.setValue(4)
         self.players_spin.valueChanged.connect(self.calculate)
-        self.ll_spin = QSpinBox(); self.ll_spin.setRange(0, 12); self.ll_spin.setValue(0)
+        self.ll_spin = QSpinBox();
+        self.ll_spin.setRange(0, 12);
+        self.ll_spin.setValue(0)
         self.ll_spin.valueChanged.connect(self.calculate)
         s_layout.addRow(TR("lbl_players"), self.players_spin)
         s_layout.addRow(TR("lbl_ll"), self.ll_spin)
@@ -997,7 +1091,8 @@ class EncounterBuilder(QWidget):
         key = item.data(Qt.ItemDataRole.UserRole)
         preset = NPC_PRESETS.get(key)
         if preset:
-            t1_stats = preset.get("tiers", {}).get("Tier 1", {"hp": 10, "eva": 10, "edef": 10, "spd": 4, "sen": 10, "save": 10})
+            t1_stats = preset.get("tiers", {}).get("Tier 1",
+                                                   {"hp": 10, "eva": 10, "edef": 10, "spd": 4, "sen": 10, "save": 10})
             preview_data = {
                 "name": loc(preset, "name"),
                 "hp": t1_stats.get("hp", 10),
@@ -1011,9 +1106,9 @@ class EncounterBuilder(QWidget):
                 "tier_display": "Tier 1 (Base)",
                 "size": preset.get("size", "1"),
                 "role": preset.get("role", "Striker"),
-                "base_features": preset.get("base_features",[]),
-                "optional_features": preset.get("optional_features",[]),
-                "template_features":[]
+                "base_features": preset.get("base_features", []),
+                "optional_features": preset.get("optional_features", []),
+                "template_features": []
             }
             card_preview = CombatantCard(preview_data, is_preview=True)
             self.preview_layout.addWidget(card_preview)
@@ -1029,9 +1124,9 @@ class EncounterBuilder(QWidget):
         tier = 1
         if ll >= 5: tier = 2
         if ll >= 9: tier = 3
-        
+
         budget = players
-        if ll in[3, 4, 7, 8, 11, 12]:
+        if ll in [3, 4, 7, 8, 11, 12]:
             budget += max(1, players // 2)
 
         if LANG == "EN":
@@ -1127,45 +1222,48 @@ class MapWidget(QWidget):
             angle_rad = math.radians(angle_deg)
             x = cx + size * math.cos(angle_rad)
             y = cy + size * math.sin(angle_rad)
-            if i == 0: path.moveTo(x, y)
-            else: path.lineTo(x, y)
+            if i == 0:
+                path.moveTo(x, y)
+            else:
+                path.lineTo(x, y)
         path.closeSubpath()
         painter.drawPath(path)
 
     def draw_sitrep_zones(self, painter, w, h):
         painter.setPen(Qt.PenStyle.NoPen)
-        font = QFont("Arial", int(16/self.zoom_factor), QFont.Weight.Bold)
+        font = QFont("Arial", int(16 / self.zoom_factor), QFont.Weight.Bold)
         painter.setFont(font)
 
         if "Control" in self.sitrep:
             painter.setBrush(QColor(255, 150, 0, 100))
             sz = w * 0.15
-            zones =[(w*0.1, h*0.1), (w*0.9-sz, h*0.1), (w*0.1, h*0.9-sz), (w*0.9-sz, h*0.9-sz)]
+            zones = [(w * 0.1, h * 0.1), (w * 0.9 - sz, h * 0.1), (w * 0.1, h * 0.9 - sz), (w * 0.9 - sz, h * 0.9 - sz)]
             for zx, zy in zones: painter.drawRect(int(zx), int(zy), int(sz), int(sz))
         elif "Escort" in self.sitrep:
             painter.setBrush(QColor(0, 229, 255, 100))
-            painter.drawRect(20, int(h/2 - 100), 100, 200)
+            painter.drawRect(20, int(h / 2 - 100), 100, 200)
             painter.setBrush(QColor(0, 255, 100, 100))
-            painter.drawRect(int(w - 120), int(h/2 - 100), 100, 200)
+            painter.drawRect(int(w - 120), int(h / 2 - 100), 100, 200)
             painter.setBrush(QColor(255, 51, 102, 60))
             painter.drawRect(150, 20, int(w - 300), 80)
             painter.drawRect(150, int(h - 100), int(w - 300), 80)
         elif "Extraction" in self.sitrep:
             painter.setBrush(QColor(255, 150, 0, 100))
-            painter.drawRect(int(w/2 - 50), int(h/2 - 50), 100, 100)
+            painter.drawRect(int(w / 2 - 50), int(h / 2 - 50), 100, 100)
             painter.setBrush(QColor(0, 255, 100, 100))
             painter.drawRect(int(w - 150), int(h - 150), 120, 120)
         elif "Strike" in self.sitrep:
             painter.setBrush(QColor(0, 229, 255, 100))
-            painter.drawRect(20, 20, 150, int(h-40))
+            painter.drawRect(20, 20, 150, int(h - 40))
             painter.setBrush(QColor(255, 51, 102, 100))
-            painter.drawRect(int(w - 200), 20, 180, int(h-40))
+            painter.drawRect(int(w - 200), 20, 180, int(h - 40))
         elif "Holdout" in self.sitrep:
             painter.setBrush(QColor(0, 229, 255, 100))
-            painter.drawRect(int(w/2 - 100), int(h/2 - 100), 200, 200)
+            painter.drawRect(int(w / 2 - 100), int(h / 2 - 100), 200, 200)
             painter.setBrush(QColor(255, 51, 102, 60))
-            painter.drawRect(20, 20, int(w-40), 60)
-            painter.drawRect(20, int(h-80), int(w-40), 60)
+            painter.drawRect(20, 20, int(w - 40), 60)
+            painter.drawRect(20, int(h - 80), int(w - 40), 60)
+
 
 class SitrepPlanner(QWidget):
     def __init__(self):
@@ -1177,7 +1275,7 @@ class SitrepPlanner(QWidget):
         btn_load_map.setStyleSheet("background-color: #2196F3; color: black; font-weight: bold; padding: 8px;")
         btn_load_map.clicked.connect(self.load_map)
         toolbar1.addWidget(btn_load_map)
-        
+
         btn_export = QPushButton(TR("btn_export_map"))
         btn_export.setStyleSheet("background-color: #4CAF50; color: black; font-weight: bold; padding: 8px;")
         btn_export.clicked.connect(self.export_map)
@@ -1235,7 +1333,7 @@ class SitrepPlanner(QWidget):
     def load_map(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Map", "", "Images (*.png *.jpg *.jpeg)")
         if file_path: self.map_widget.set_background(file_path)
-        
+
     def export_map(self):
         file_path, _ = QFileDialog.getSaveFileName(self, "Export", "sitrep_map.png", "PNG (*.png)")
         if file_path:
@@ -1243,16 +1341,21 @@ class SitrepPlanner(QWidget):
             self.map_widget.render(pixmap)
             pixmap.save(file_path)
 
-    def change_sitrep(self, text): self.map_widget.set_sitrep(text)
+    def change_sitrep(self, text):
+        self.map_widget.set_sitrep(text)
+
     def change_zoom(self, val):
         self.map_widget.zoom_factor = val / 100.0
         self.map_widget.update_dimensions()
+
     def change_hex(self, val):
         self.map_widget.hex_size = val
         self.map_widget.update()
+
     def change_ox(self, val):
         self.map_widget.offset_x = val
         self.map_widget.update()
+
     def change_oy(self, val):
         self.map_widget.offset_y = val
         self.map_widget.update()
@@ -1283,7 +1386,7 @@ class MainWindow(QMainWindow):
         self.lang_combo.addItems(["🇷🇺 RU", "🇬🇧 EN"])
         self.lang_combo.setCurrentIndex(0 if LANG == "RU" else 1)
         self.lang_combo.currentTextChanged.connect(self.change_language)
-        
+
         tabs = QTabWidget()
         tabs.setCornerWidget(self.lang_combo, Qt.Corner.TopRightCorner)
 
@@ -1294,7 +1397,7 @@ class MainWindow(QMainWindow):
         tabs.addTab(self.tracker, TR("tab_tracker"))
         tabs.addTab(self.builder, TR("tab_enc"))
         tabs.addTab(self.sitrep, TR("tab_map"))
-        
+
         self.setCentralWidget(tabs)
 
     def change_language(self, text):
@@ -1304,6 +1407,7 @@ class MainWindow(QMainWindow):
             settings.setValue("language", new_lang)
             QMessageBox.information(self, "Language changed", LOCALE[new_lang]["lang_alert"])
             # Приложение нужно перезапустить для полного применения
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
