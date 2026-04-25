@@ -5,7 +5,7 @@ import json
 import random
 import string
 import os
-from PySide6.QtCore import Qt, Signal, QSize, QTimer, QSettings
+from PySide6.QtCore import Qt, Signal, QSize, QTimer, QSettings, QRect, QPoint
 from PySide6.QtGui import (
     QColor, QPainter, QPen, QFont, QPainterPath, QPixmap
 )
@@ -16,10 +16,9 @@ from PySide6.QtWidgets import (
     QDialogButtonBox, QTextEdit, QGroupBox, QListWidget,
     QListWidgetItem, QListView, QProgressBar, QTextBrowser,
     QFileDialog, QScrollArea, QSlider, QAbstractItemView, QStackedWidget,
-    QCheckBox, QGridLayout, QRadioButton, QMessageBox, QSizePolicy
+    QCheckBox, QGridLayout, QRadioButton, QMessageBox, QSizePolicy, QLayout
 )
 
-# --- НАСТРОЙКИ ЯЗЫКА (ЛОКАЛИЗАЦИЯ) ---
 settings = QSettings("LancerTools", "Terminal")
 LANG = settings.value("language", "RU")
 
@@ -88,23 +87,19 @@ LOCALE = {
 def TR(key): return LOCALE.get(LANG, LOCALE["RU"]).get(key, key)
 
 
-# --- ИКОНКИ РОЛЕЙ ---
 ROLE_ICONS = {
     "Striker": "⚔️", "Artillery": "🎯", "Defender": "🛡️",
     "Controller": "👁️", "Support": "🔧", "Biological": "🧬", "Player": "👤"
 }
 
 
-# --- ПОДДЕРЖКА ДВУЯЗЫЧНОГО JSON ---
 def loc(item, key):
-    """Вытягивает ключ с учетом языка (name_ru / name_en). Фолбэк на обычный ключ."""
     if not isinstance(item, dict): return str(item)
     lang_key = f"{key}_{LANG.lower()}"
     if lang_key in item and item[lang_key]: return str(item[lang_key])
     return str(item.get(key, ""))
 
 
-# --- ФОРМАТТЕР ТЕКСТА ПОД СТИЛЬ LANCER ---
 def format_lancer_text(text):
     if not text: return ""
     rg = "Дальность" if LANG == "RU" else "Range"
@@ -166,7 +161,6 @@ def load_npc_database():
 NPC_PRESETS = load_npc_database()
 
 
-# --- ПАРСЕР COMP/CON ---
 def translate_compcon(text):
     if LANG == "EN": return text
     dict_ru = {
@@ -270,7 +264,83 @@ def format_feature_with_stats(feature, tier):
     """
 
 
-# --- КАРТОЧКА ПЕРСОНАЖА ---
+class FlowLayout(QLayout):
+    def __init__(self, parent=None, margin=5, spacing=5):
+        super().__init__(parent)
+        if parent is not None:
+            self.setContentsMargins(margin, margin, margin, margin)
+        self.itemList = []
+        self.m_spacing = spacing
+
+    def __del__(self):
+        item = self.takeAt(0)
+        while item:
+            item = self.takeAt(0)
+
+    def addItem(self, item):
+        self.itemList.append(item)
+
+    def count(self):
+        return len(self.itemList)
+
+    def itemAt(self, index):
+        if 0 <= index < len(self.itemList):
+            return self.itemList[index]
+        return None
+
+    def takeAt(self, index):
+        if 0 <= index < len(self.itemList):
+            return self.itemList.pop(index)
+        return None
+
+    def expandingDirections(self):
+        return Qt.Orientation(0)
+
+    def hasHeightForWidth(self):
+        return True
+
+    def heightForWidth(self, width):
+        return self.doLayout(QRect(0, 0, width, 0), True)
+
+    def setGeometry(self, rect):
+        super().setGeometry(rect)
+        self.doLayout(rect, False)
+
+    def sizeHint(self):
+        return self.minimumSize()
+
+    def minimumSize(self):
+        size = QSize()
+        for item in self.itemList:
+            size = size.expandedTo(item.minimumSize())
+        margins = self.contentsMargins()
+        size += QSize(margins.left() + margins.right(), margins.top() + margins.bottom())
+        return size
+
+    def doLayout(self, rect, testOnly):
+        x, y = rect.x(), rect.y()
+        lineHeight = 0
+        for item in self.itemList:
+            wid = item.widget()
+            spaceX = self.m_spacing
+            spaceY = self.m_spacing
+            nextX = x + item.sizeHint().width() + spaceX
+
+            if nextX - spaceX > rect.right() and lineHeight > 0:
+                x = rect.x()
+                y = y + lineHeight + spaceY
+                nextX = x + item.sizeHint().width() + spaceX
+                lineHeight = 0
+
+            if not testOnly:
+                item.setGeometry(QRect(QPoint(x, y), item.sizeHint()))
+
+            x = nextX
+            lineHeight = max(lineHeight, item.sizeHint().height())
+
+        return y + lineHeight - rect.y()
+
+
 class CombatantCard(QFrame):
     hp_changed = Signal(object)
     deleted = Signal(object)
@@ -328,7 +398,10 @@ class CombatantCard(QFrame):
         role_icon = ROLE_ICONS.get(self.data.get("role", "Player"), "🤖")
         display_name = self.data.get('display_name', self.data.get('name_ru', self.data.get('name', '???')))
 
-        self.name_lbl = QLabel(f"{role_icon} {display_name}")
+        uid = self.data.get('uid', '')
+        uid_str = f" [{uid}]" if uid else ""
+
+        self.name_lbl = QLabel(f"{role_icon} {display_name}{uid_str}")
         self.name_lbl.setStyleSheet(f"font-weight: bold; font-size: 13px; color: {self.color_hex};")
 
         self.btn_copy = QPushButton("📋")
@@ -438,7 +511,10 @@ class CombatantCard(QFrame):
         role_icon = ROLE_ICONS.get(self.data.get("role", "Player"), "🤖")
         display_name = self.data.get('display_name', self.data.get('name_ru', self.data.get('name', '???')))
 
-        name_lbl = QLabel(f"🔄 {role_icon} {display_name}")
+        uid = self.data.get('uid', '')
+        uid_str = f" [{uid}]" if uid else ""
+
+        name_lbl = QLabel(f"🔄 {role_icon} {display_name}{uid_str}")
         name_lbl.setStyleSheet(f"font-weight: bold; font-size: 11px; color: {self.color_hex};")
         layout.addWidget(name_lbl)
 
@@ -509,7 +585,6 @@ class CombatantCard(QFrame):
         self.hp_changed.emit(self)
 
 
-# --- ДИАЛОГИ ---
 class ImportDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -656,7 +731,7 @@ class AddNpcDialog(QDialog):
         self.update_stats()
 
     def auto_name(self):
-        if self.faction_combo.currentIndex() == 2:  # Player
+        if self.faction_combo.currentIndex() == 2:
             self.name_input.setText("")
         else:
             self.name_input.setText(self.class_combo.currentText())
@@ -741,7 +816,6 @@ class AddNpcDialog(QDialog):
         }
 
 
-# --- ВКЛАДКА 1: БОЕВОЙ ТРЕКЕР ---
 class CombatTracker(QWidget):
     roster_changed = Signal()
 
@@ -783,10 +857,13 @@ class CombatTracker(QWidget):
         self.card_list.setStyleSheet("background-color: transparent; border: none;")
         layout.addWidget(self.card_list)
 
-        init_box = QGroupBox(TR("timeline"))
-        self.timeline = QHBoxLayout(init_box)
-        self.timeline.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        layout.addWidget(init_box)
+        self.init_box = QGroupBox(TR("timeline"))
+        self.init_box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.timeline_layout = FlowLayout(margin=10, spacing=6)
+        self.init_box.setLayout(self.timeline_layout)
+
+        layout.addWidget(self.init_box)
 
     def generate_uid(self):
         existing_uids = [c['card'].data.get('uid', '') for c in self.combatants]
@@ -810,22 +887,21 @@ class CombatTracker(QWidget):
         if idx != -1:
             new_idx = idx + direction
             if 0 <= new_idx < len(self.combatants):
-                item_current = self.combatants[idx]['item']
-                item_target = self.combatants[new_idx]['item']
+                for c in self.combatants:
+                    c['card'].data['current_hp'] = c['card'].current_hp
+                    c['card'].data['has_acted'] = c['card'].has_acted
 
-                self.card_list.removeItemWidget(item_current)
-                self.card_list.removeItemWidget(item_target)
+                encounter_data = [c['card'].data for c in self.combatants]
+                encounter_data[idx], encounter_data[new_idx] = encounter_data[new_idx], encounter_data[idx]
 
-                self.combatants[idx], self.combatants[new_idx] = self.combatants[new_idx], self.combatants[idx]
+                for c in self.combatants:
+                    c['card'].setParent(None)
 
-                self.card_list.setItemWidget(item_current, self.combatants[idx]['card'])
-                self.card_list.setItemWidget(item_target, self.combatants[new_idx]['card'])
+                self.card_list.clear()
+                self.combatants.clear()
 
-                self.combatants[idx]['item'] = item_current
-                self.combatants[new_idx]['item'] = item_target
-
-                self.update_arrows()
-                self.update_timeline()
+                for data in encounter_data:
+                    self.add_card(data, is_rebuild=True)
 
     def update_arrows(self):
         total = len(self.combatants)
@@ -861,7 +937,9 @@ class CombatTracker(QWidget):
                             c['card'].data["name"] = f"{base_name} 1"
                             c['card'].data['display_name'] = f"{base_name} 1"
                             role_icon = ROLE_ICONS.get(c['card'].data.get("role", "Player"), "🤖")
-                            c['card'].name_lbl.setText(f"{role_icon} {c['card'].data['display_name']}")
+                            uid = c['card'].data.get("uid", "")
+                            uid_str = f" [{uid}]" if uid else ""
+                            c['card'].name_lbl.setText(f"{role_icon} {c['card'].data['display_name']}{uid_str}")
                             break
 
             if 'uid' not in data:
@@ -909,8 +987,8 @@ class CombatTracker(QWidget):
             try:
                 with open(file_path, 'w', encoding='utf-8') as f:
                     json.dump(encounter_data, f, ensure_ascii=False, indent=4)
-            except Exception as e:
-                print("Ошибка сохранения:", e)
+            except Exception:
+                pass
 
     def load_encounter(self):
         file_path, _ = QFileDialog.getOpenFileName(self, TR("btn_load"), "", "JSON (*.json)")
@@ -925,21 +1003,26 @@ class CombatTracker(QWidget):
 
                 for data in encounter_data:
                     self.add_card(data, is_rebuild=True)
-            except Exception as e:
-                print("Ошибка загрузки:", e)
+            except Exception:
+                pass
 
     def update_timeline(self, _=None):
-        for i in reversed(range(self.timeline.count())):
-            widget = self.timeline.itemAt(i).widget()
-            if widget: widget.setParent(None)
+        while self.timeline_layout.count():
+            child = self.timeline_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
 
         for c in self.combatants:
             card = c['card']
             if not card.is_dead and not card.has_acted:
-                lbl = QLabel(card.data.get("display_name", card.data.get("name", "Unknown")))
+                uid = card.data.get("uid", "")
+                uid_str = f" [{uid}]" if uid else ""
+                name = card.data.get("display_name", card.data.get("name", "Unknown"))
+
+                lbl = QLabel(f"{name}{uid_str}")
                 lbl.setStyleSheet(
                     f"background-color: {card.color_hex}; color: #000; padding: 4px 10px; border-radius: 8px; font-weight: bold; font-size: 11px;")
-                self.timeline.addWidget(lbl)
+                self.timeline_layout.addWidget(lbl)
 
     def next_round(self):
         for c in self.combatants:
@@ -950,7 +1033,6 @@ class CombatTracker(QWidget):
         self.update_timeline()
 
 
-# --- АНИМАЦИЯ ДЕТАЛИЗИРОВАННОЙ ДЕВУШКИ ASCII ---
 class AsciiGirl(QLabel):
     def __init__(self):
         super().__init__()
@@ -961,7 +1043,6 @@ class AsciiGirl(QLabel):
 
     def set_art(self):
         if self.state == 0:
-            # Обычное состояние (Строгий кибер-стиль)
             art = (
                 "⠀⠀⠀⠀⠀⠔⠁⣠⠞⠕⠁⢠⣾⢿⣻⣿⡿⠀⠀⣰⢀⠀⠀⠀⠀⠀⠀⠀⠹⢿⣿⣧⡀⠉⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡄⠀\n"
                 "⠀⠀⠀⠀⠀⠀⠀⠌⢠⡞⢁⠊⠀⣰⠛⠁⢪⢺⣿⡇⠀⠀⣿⠘⣤⡀⠀⠢⣅⠂⢀⠀⠈⢻⣿⡕⡀⠀⠈⡟⢿⡻⣟⠛⣿⣿⣿⣿⣿⡀\n"
@@ -992,7 +1073,6 @@ class AsciiGirl(QLabel):
             self.setStyleSheet(
                 "font-family: monospace; font-size: 5px; line-height: 1.0; color: #00E5FF; font-weight: bold; background: transparent;")
         else:
-            # Состояние "Влюблена" (Розовый/Пурпурный стиль)
             art = (
                 "⠀⠀⠀⠀⠀⠔⠁⣠⠞⠕⠁⢠⣾⢿⣻⣿⡿⠀⠀⣰⢀⠀⠀⠀⠀⠀⠀⠀⠹⢿⣿⣧⡀⠉⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡄⠀\n"
                 "⠀⠀⠀⠀⠀⠀⠀⠌⢠⡞⢁⠊⠀⣰⠛⠁⢪⢺⣿⡇⠀⠀⣿⠘⣤⡀⠀⠢⣅⠂⢀⠀⠈⢻⣿⡕⡀⠀⠈⡟⢿⡻⣟⠛⣿⣿⣿⣿⣿⡀\n"
@@ -1031,7 +1111,6 @@ class AsciiGirl(QLabel):
         super().mousePressEvent(event)
 
 
-# --- ВКЛАДКА 2: КАЛЬКУЛЯТОР БАЛАНСА И ЭНЦИКЛОПЕДИЯ ВРАГОВ ---
 class EncounterBuilder(QWidget):
     def __init__(self):
         super().__init__()
@@ -1155,7 +1234,6 @@ class EncounterBuilder(QWidget):
         self.result_browser.setHtml(html)
 
 
-# --- ВКЛАДКА 3: ПЛАНИРОВЩИК СИТРЕПОВ С КАРТОЙ ---
 class MapWidget(QWidget):
     def __init__(self):
         super().__init__()
@@ -1361,7 +1439,6 @@ class SitrepPlanner(QWidget):
         self.map_widget.update()
 
 
-# --- ГЛАВНОЕ ОКНО ---
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -1406,7 +1483,6 @@ class MainWindow(QMainWindow):
         if LANG != new_lang:
             settings.setValue("language", new_lang)
             QMessageBox.information(self, "Language changed", LOCALE[new_lang]["lang_alert"])
-            # Приложение нужно перезапустить для полного применения
 
 
 if __name__ == "__main__":
