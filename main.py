@@ -51,6 +51,8 @@ LOCALE = {
         "lbl_hex": "Размер гекса:",
         "lbl_ox": "Сдвиг X:",
         "lbl_oy": "Сдвиг Y:",
+        "burn_label": "Горение",
+        "btn_tick": "✔ Урон",
     },
     "EN": {
         "tab_tracker": "⚔️ Combat Tracker",
@@ -80,6 +82,8 @@ LOCALE = {
         "lbl_hex": "Hex Size:",
         "lbl_ox": "Offset X:",
         "lbl_oy": "Offset Y:",
+        "burn_label": "Burn",
+        "btn_tick": "✔ Tick",
     }
 }
 
@@ -154,7 +158,12 @@ def load_npc_database():
     try:
         with open(file_name, "r", encoding="utf-8") as f:
             return json.load(f)
-    except:
+    except json.JSONDecodeError as e:
+        print(f"ОШИБКА В JSON ФАЙЛЕ (npcs.json):\nСтрока {e.lineno}, колонка {e.colno}: {e.msg}")
+        return {"Error": {"name": "ОШИБКА JSON", "name_ru": "ОШИБКА JSON", "base_features": [], "optional_features": [],
+                          "tiers": {"Tier 1": {}}}}
+    except Exception as e:
+        print(f"Ошибка загрузки базы: {e}")
         return {}
 
 
@@ -201,6 +210,16 @@ def parse_compcon(text, faction="player"):
 
     m_size = re.search(r'SIZE:\s*([0-9/.]+)', text)
     if m_size: data["size"] = m_size.group(1)
+
+    # Structure & Stress from CompCon
+    m_struct = re.search(r'STRUCT:\s*(?:\d+/)?(\d+)', text)
+    data['max_structure'] = int(m_struct.group(1)) if m_struct else 4
+
+    m_stress = re.search(r'STRESS:\s*(?:\d+/)?(\d+)', text)
+    data['max_stress'] = int(m_stress.group(1)) if m_stress else 4
+
+    m_heat = re.search(r'HEAT:\s*(?:\d+/)?(\d+)', text)
+    data['heat_cap'] = int(m_heat.group(1)) if m_heat else 6
 
     m_armor = re.search(r'ARMOR:\s*(\d+)', text)
     if m_armor:
@@ -352,6 +371,17 @@ class CombatantCard(QFrame):
         self.data = data
         self.max_hp = data["hp"]
         self.current_hp = data.get("current_hp", self.max_hp)
+
+        # Structure, Stress, Heat, Burn
+        self.max_structure = data.get("max_structure", 1)
+        self.current_structure = data.get("current_structure", self.max_structure)
+        self.max_stress = data.get("max_stress", 1)
+        self.current_stress = data.get("current_stress", self.max_stress)
+
+        self.heat_cap = data.get("heat_cap", 6)
+        self.current_heat = data.get("current_heat", 0)
+        self.burn = data.get("burn", 0)
+
         self.is_dead = False
         self.has_acted = data.get("has_acted", False)
 
@@ -362,7 +392,8 @@ class CombatantCard(QFrame):
         elif "Tier 3" in tier_str:
             self.tier_num = 3
 
-        self.setFixedSize(250, 390)
+        # Увеличен размер карточки, чтобы всё красиво влезло
+        self.setFixedSize(280, 500)
         self.setObjectName("CardFrame")
 
         if data.get("faction") == "player":
@@ -380,7 +411,7 @@ class CombatantCard(QFrame):
 
         self._build_front_page(is_preview)
         self._build_back_page(is_preview)
-        self.update_style()
+        self.update_bars()
 
     def _build_front_page(self, is_preview):
         front_widget = QWidget()
@@ -388,6 +419,7 @@ class CombatantCard(QFrame):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(6)
 
+        # Header
         header = QHBoxLayout()
         header.setSpacing(2)
 
@@ -407,7 +439,7 @@ class CombatantCard(QFrame):
         self.btn_copy = QPushButton("📋")
         self.btn_copy.setFixedSize(20, 20)
         self.btn_copy.setToolTip("Copy UID")
-        self.btn_copy.setStyleSheet("background: transparent; border: none; font-size: 12px;")
+        self.btn_copy.setStyleSheet("background: transparent; border: none; font-size: 12px; padding: 0;")
         self.btn_copy.clicked.connect(self.copy_uid)
 
         self.btn_r = QPushButton("►")
@@ -425,6 +457,7 @@ class CombatantCard(QFrame):
         tier_lbl.setStyleSheet("color: #aaa; font-size: 10px;")
         layout.addWidget(tier_lbl)
 
+        # Stats HTML
         stats_html = f"""
         <table width='100%' style='color: #ddd; font-family: monospace; font-size: 11px; background: #222; border-radius: 3px; padding: 2px;'>
             <tr>
@@ -441,26 +474,137 @@ class CombatantCard(QFrame):
         """
         layout.addWidget(QLabel(stats_html))
 
+        # ---- СПЕЦИАЛЬНЫЙ СТИЛЬ ДЛЯ МЕЛКИХ КНОПОК ----
+        # padding: 0px обязательно, чтобы текст влезал в маленькие кнопки
+        mini_btn_style = """
+            QPushButton { 
+                background: #333; color: white; border: 1px solid #555; 
+                border-radius: 3px; padding: 0px; font-size: 12px; font-weight: bold;
+            }
+            QPushButton:hover { background: #444; border: 1px solid #00E5FF; }
+            QPushButton:pressed { background: #222; }
+        """
+
+        # ---- HEALTH AND STRUCTURE ----
+        hp_layout = QHBoxLayout()
         self.hp_bar = QProgressBar()
         self.hp_bar.setMaximum(self.max_hp)
         self.hp_bar.setValue(self.current_hp)
-        self.hp_bar.setTextVisible(True)
         self.hp_bar.setFormat("%v / %m HP")
         self.hp_bar.setStyleSheet(f"""
             QProgressBar {{ border: 1px solid #444; background: #111; border-radius: 3px; color: #fff; text-align: center; font-weight: bold; height: 18px; font-size: 11px;}}
             QProgressBar::chunk {{ background-color: {self.color_hex}; border-radius: 2px;}}
         """)
-        layout.addWidget(self.hp_bar)
 
-        hp_ctrl = QHBoxLayout()
-        btn_minus = QPushButton("-1 HP")
-        btn_plus = QPushButton("+1 HP")
-        btn_minus.clicked.connect(self.dec_hp)
-        btn_plus.clicked.connect(self.inc_hp)
-        hp_ctrl.addWidget(btn_minus)
-        hp_ctrl.addWidget(btn_plus)
-        layout.addLayout(hp_ctrl)
+        btn_hp_m5 = QPushButton("-5")
+        btn_hp_m1 = QPushButton("-1")
+        btn_hp_p1 = QPushButton("+1")
+        btn_hp_m5.clicked.connect(lambda: self.dec_hp(5))
+        btn_hp_m1.clicked.connect(lambda: self.dec_hp(1))
+        btn_hp_p1.clicked.connect(lambda: self.inc_hp(1))
 
+        for btn in [btn_hp_m5, btn_hp_m1, btn_hp_p1]:
+            btn.setFixedSize(26, 22)
+            btn.setStyleSheet(mini_btn_style)
+
+        hp_layout.addWidget(self.hp_bar)
+        hp_layout.addWidget(btn_hp_m5)
+        hp_layout.addWidget(btn_hp_m1)
+        hp_layout.addWidget(btn_hp_p1)
+        layout.addLayout(hp_layout)
+
+        # ---- HEAT AND STRESS ----
+        heat_layout = QHBoxLayout()
+        self.heat_bar = QProgressBar()
+        self.heat_bar.setMaximum(self.heat_cap)
+        self.heat_bar.setValue(self.current_heat)
+        self.heat_bar.setFormat("%v / %m HT")
+        self.heat_bar.setStyleSheet("""
+            QProgressBar { border: 1px solid #444; background: #111; border-radius: 3px; color: #fff; text-align: center; font-weight: bold; height: 18px; font-size: 11px;}
+            QProgressBar::chunk { background-color: #FF5722; border-radius: 2px;}
+        """)
+
+        btn_heat_m5 = QPushButton("-5")
+        btn_heat_m1 = QPushButton("-1")
+        btn_heat_p1 = QPushButton("+1")
+        btn_heat_m5.clicked.connect(lambda: self.dec_heat(5))
+        btn_heat_m1.clicked.connect(lambda: self.dec_heat(1))
+        btn_heat_p1.clicked.connect(lambda: self.inc_heat(1))
+
+        for btn in [btn_heat_m5, btn_heat_m1, btn_heat_p1]:
+            btn.setFixedSize(26, 22)
+            btn.setStyleSheet(mini_btn_style)
+
+        heat_layout.addWidget(self.heat_bar)
+        heat_layout.addWidget(btn_heat_m5)
+        heat_layout.addWidget(btn_heat_m1)
+        heat_layout.addWidget(btn_heat_p1)
+        layout.addLayout(heat_layout)
+
+        # ---- STRUCTURE, STRESS LABELS ----
+        str_layout = QHBoxLayout()
+        str_layout.setSpacing(4)
+
+        self.lbl_str = QLabel()
+        self.lbl_str.setStyleSheet("font-weight: bold; color: #FF3366; font-size: 11px;")
+        btn_str_m = QPushButton("-")
+        btn_str_p = QPushButton("+")
+        btn_str_m.clicked.connect(self.dec_str)
+        btn_str_p.clicked.connect(self.inc_str)
+
+        self.lbl_strs = QLabel()
+        self.lbl_strs.setStyleSheet("font-weight: bold; color: #FF9800; font-size: 11px;")
+        btn_strs_m = QPushButton("-")
+        btn_strs_p = QPushButton("+")
+        btn_strs_m.clicked.connect(self.dec_strs)
+        btn_strs_p.clicked.connect(self.inc_strs)
+
+        for btn in [btn_str_m, btn_str_p, btn_strs_m, btn_strs_p]:
+            btn.setFixedSize(22, 22)
+            btn.setStyleSheet(mini_btn_style)
+
+        str_layout.addWidget(self.lbl_str)
+        str_layout.addWidget(btn_str_m)
+        str_layout.addWidget(btn_str_p)
+        str_layout.addStretch()
+        str_layout.addWidget(self.lbl_strs)
+        str_layout.addWidget(btn_strs_m)
+        str_layout.addWidget(btn_strs_p)
+        layout.addLayout(str_layout)
+
+        # ---- BURN (ГОРЕНИЕ) ----
+        burn_layout = QHBoxLayout()
+        burn_layout.setSpacing(4)
+        self.lbl_burn = QLabel()
+        self.lbl_burn.setStyleSheet("font-weight: bold; color: #EF5350; font-size: 11px;")
+
+        btn_burn_clear = QPushButton("0")
+        btn_burn_p1 = QPushButton("+1")
+        btn_burn_tick = QPushButton(TR("btn_tick"))
+
+        btn_burn_clear.clicked.connect(self.clear_burn)
+        btn_burn_p1.clicked.connect(self.inc_burn)
+        btn_burn_tick.clicked.connect(self.apply_burn)
+
+        btn_burn_clear.setFixedSize(22, 22)
+        btn_burn_p1.setFixedSize(26, 22)
+        btn_burn_clear.setStyleSheet(mini_btn_style)
+        btn_burn_p1.setStyleSheet(mini_btn_style)
+
+        btn_burn_tick.setStyleSheet("""
+            QPushButton { background: #FF5722; color: white; font-weight: bold; border-radius: 3px; padding: 2px 6px; font-size: 12px; border: none;}
+            QPushButton:hover { background: #FF7043; border: 1px solid #fff;}
+            QPushButton:pressed { background: #E64A19; }
+        """)
+
+        burn_layout.addWidget(self.lbl_burn)
+        burn_layout.addWidget(btn_burn_clear)
+        burn_layout.addWidget(btn_burn_p1)
+        burn_layout.addStretch()
+        burn_layout.addWidget(btn_burn_tick)
+        layout.addLayout(burn_layout)
+
+        # ---- ABILITIES ----
         abilities_browser = QTextBrowser()
         abilities_browser.setStyleSheet(
             "QTextBrowser { background: #161616; color: #ccc; border: 1px solid #333; border-radius: 4px; padding: 4px; font-size: 11px;}")
@@ -476,6 +620,7 @@ class CombatantCard(QFrame):
         btn_flip.clicked.connect(lambda: self.stack.setCurrentIndex(1))
         layout.addWidget(btn_flip)
 
+        # Bottom Controls
         bottom_ctrl = QHBoxLayout()
         self.btn_act = QPushButton("End Turn" if LANG == "EN" else "Завершить ход")
         self.btn_act.setCheckable(True)
@@ -492,13 +637,25 @@ class CombatantCard(QFrame):
         layout.addLayout(bottom_ctrl)
 
         if is_preview:
-            self.btn_l.hide();
-            self.btn_r.hide();
+            self.btn_l.hide()
+            self.btn_r.hide()
             self.btn_copy.hide()
-            self.btn_act.hide();
+            self.btn_act.hide()
             self.btn_del.hide()
-            hp_ctrl.itemAt(0).widget().hide()
-            hp_ctrl.itemAt(1).widget().hide()
+
+            # Hide all +/- buttons in preview
+            for i in range(hp_layout.count()):
+                w = hp_layout.itemAt(i).widget()
+                if isinstance(w, QPushButton): w.hide()
+            for i in range(heat_layout.count()):
+                w = heat_layout.itemAt(i).widget()
+                if isinstance(w, QPushButton): w.hide()
+            for i in range(str_layout.count()):
+                w = str_layout.itemAt(i).widget()
+                if isinstance(w, QPushButton): w.hide()
+            for i in range(burn_layout.count()):
+                w = burn_layout.itemAt(i).widget()
+                if isinstance(w, QPushButton): w.hide()
 
         self.stack.addWidget(front_widget)
 
@@ -549,26 +706,103 @@ class CombatantCard(QFrame):
             self.btn_copy.setText("✔")
             QTimer.singleShot(1000, lambda: self.btn_copy.setText("📋"))
 
-    def dec_hp(self):
-        if self.current_hp > 0:
-            self.current_hp -= 1
-            self.hp_bar.setValue(self.current_hp)
-            self.data['current_hp'] = self.current_hp
-            self.update_style()
+    def dec_hp(self, amount=1):
+        if self.is_dead: return
+        self.current_hp -= amount
+        if self.current_hp <= 0:
+            if self.current_structure > 1:
+                self.current_structure -= 1
+                self.current_hp = self.max_hp
+            else:
+                self.current_structure = 0
+                self.current_hp = 0
 
-    def inc_hp(self):
-        self.current_hp += 1
-        self.hp_bar.setValue(self.current_hp)
         self.data['current_hp'] = self.current_hp
-        self.update_style()
+        self.data['current_structure'] = self.current_structure
+        self.update_bars()
+
+    def inc_hp(self, amount=1):
+        if self.is_dead and self.current_structure <= 0: return
+        self.current_hp = min(self.max_hp, self.current_hp + amount)
+        self.data['current_hp'] = self.current_hp
+        self.update_bars()
+
+    def dec_heat(self, amount=1):
+        if self.is_dead: return
+        self.current_heat = max(0, self.current_heat - amount)
+        self.data['current_heat'] = self.current_heat
+        self.update_bars()
+
+    def inc_heat(self, amount=1):
+        if self.is_dead: return
+        self.current_heat += amount
+        if self.current_heat >= self.heat_cap:
+            if self.current_stress > 1:
+                self.current_stress -= 1
+                self.current_heat = 0
+            else:
+                self.current_stress = 0
+                self.current_heat = self.heat_cap
+
+        self.data['current_heat'] = self.current_heat
+        self.data['current_stress'] = self.current_stress
+        self.update_bars()
+
+    def dec_str(self):
+        if self.current_structure > 0:
+            self.current_structure -= 1
+            self.data['current_structure'] = self.current_structure
+            self.update_bars()
+
+    def inc_str(self):
+        if self.current_structure < self.max_structure:
+            self.current_structure += 1
+            self.data['current_structure'] = self.current_structure
+            self.update_bars()
+
+    def dec_strs(self):
+        if self.current_stress > 0:
+            self.current_stress -= 1
+            self.data['current_stress'] = self.current_stress
+            self.update_bars()
+
+    def inc_strs(self):
+        if self.current_stress < self.max_stress:
+            self.current_stress += 1
+            self.data['current_stress'] = self.current_stress
+            self.update_bars()
+
+    def clear_burn(self):
+        self.burn = 0
+        self.data['burn'] = 0
+        self.update_bars()
+
+    def inc_burn(self):
+        self.burn += 1
+        self.data['burn'] = self.burn
+        self.update_bars()
+
+    def apply_burn(self):
+        if self.burn > 0:
+            self.dec_hp(self.burn)
 
     def toggle_act(self):
         self.has_acted = self.btn_act.isChecked()
         self.data['has_acted'] = self.has_acted
         self.hp_changed.emit(self)
 
-    def update_style(self):
-        self.is_dead = (self.current_hp <= 0)
+    def update_bars(self):
+        self.hp_bar.setValue(self.current_hp)
+        self.heat_bar.setValue(self.current_heat)
+        self.lbl_str.setText(f"STR: {self.current_structure}/{self.max_structure}")
+        self.lbl_strs.setText(f"STRS: {self.current_stress}/{self.max_stress}")
+
+        self.lbl_burn.setText(f"🔥 {TR('burn_label')}: {self.burn}")
+
+        # Dead condition: No HP and No Structure, OR Max Heat and No Stress
+        self.is_dead = (self.current_hp <= 0 and self.current_structure <= 0) or \
+                       (self.current_heat >= self.heat_cap and self.current_stress <= 0)
+
         border_color = "#333" if self.is_dead else self.color_hex
         bg_color = "#111111" if self.is_dead else "#202020"
 
@@ -578,10 +812,12 @@ class CombatantCard(QFrame):
             QPushButton:hover {{ background-color: #444; border: 1px solid {self.color_hex};}}
             QPushButton:checked {{ background-color: #222; border: 1px solid {self.color_hex}; color: {self.color_hex}; font-weight: bold; }}
         """)
+
         if self.is_dead:
             self.name_lbl.setStyleSheet("color: #666; font-weight: bold; text-decoration: line-through;")
         else:
             self.name_lbl.setStyleSheet(f"color: {self.color_hex}; font-weight: bold;")
+
         self.hp_changed.emit(self)
 
 
@@ -636,6 +872,7 @@ class AddNpcDialog(QDialog):
 
         self.class_combo = QComboBox()
         for key, preset in sorted(NPC_PRESETS.items()):
+            if key == "Templates": continue  # Игнорируем шаблоны из JSON для списка
             name = loc(preset, "name")
             self.class_combo.addItem(name, userData=key)
 
@@ -748,7 +985,7 @@ class AddNpcDialog(QDialog):
         if self.chk_grunt.isChecked():
             base_hp = 1
         elif self.chk_ultra.isChecked():
-            base_hp = int(base_hp * 4)
+            base_hp = int(base_hp * 4)  # Сохраняем вашу механику умножения ХП
         elif self.chk_elite.isChecked():
             base_hp = int(base_hp * 2)
 
@@ -787,10 +1024,13 @@ class AddNpcDialog(QDialog):
                      "desc_en": d_en})
 
         add_tpl(self.chk_grunt, "Салага", "Grunt", "1 ПЗ.", "1 HP.")
-        add_tpl(self.chk_elite, "Элита", "Elite", "2 хода за раунд.", "2 turns/round.")
-        add_tpl(self.chk_ultra, "Ультра", "Ultra", "Иммунитет к состояниям, босс.", "Boss template.")
+        add_tpl(self.chk_elite, "Элита", "Elite", "2 хода за раунд. +1 Структура и Стресс",
+                "2 turns/round. +1 Structure/Stress")
+        add_tpl(self.chk_ultra, "Ультра", "Ultra", "Иммунитет к состояниям. +3 Структуры/Стресса.",
+                "Boss template. +3 Structure/Stress.")
         add_tpl(self.chk_veteran, "Ветеран", "Veteran", "Иммунитет к 1 состоянию.", "Immune to 1 cond.")
-        add_tpl(self.chk_commander, "Командир", "Commander", "Баффы союзникам.", "Ally buffs.")
+        add_tpl(self.chk_commander, "Командир", "Commander", "Баффы союзникам. +1 Структура/Стресс.",
+                "Ally buffs. +1 Structure/Stress.")
         add_tpl(self.chk_exot, "Экзот", "Exot", "Паракаузальные системы.", "Paracausal.")
         add_tpl(self.chk_merc, "Наемник", "Mercenary", "+1 Точность по Вовлеченным.", "+1 Acc vs Engaged.")
         add_tpl(self.chk_pirate, "Пират", "Pirate", "+1d6 крит. урон.", "+1d6 crit damage.")
@@ -800,6 +1040,24 @@ class AddNpcDialog(QDialog):
         tier_display = self.tier_combo.currentText()
         if templates_applied:
             tier_display += f" ({', '.join(templates_applied)})"
+
+        # Назначаем Структуру и Стресс
+        tier = self.tier_combo.currentText()
+        stats = preset.get("tiers", {}).get(tier, {})
+        heat_cap = stats.get("heat", 6)
+
+        max_str = 1
+        max_strs = 1
+
+        if self.chk_elite.isChecked():
+            max_str += 1
+            max_strs += 1
+        if self.chk_ultra.isChecked():
+            max_str += 3
+            max_strs += 3
+        if self.chk_commander.isChecked():
+            max_str += 1
+            max_strs += 1
 
         return {
             "name": self.name_input.text() or "Unknown",
@@ -812,7 +1070,14 @@ class AddNpcDialog(QDialog):
             "role": preset.get("role", "Player"),
             "base_features": preset.get("base_features", []),
             "optional_features": preset.get("optional_features", []),
-            "template_features": t_feats
+            "template_features": t_feats,
+            "max_structure": max_str,
+            "current_structure": max_str,
+            "max_stress": max_strs,
+            "current_stress": max_strs,
+            "heat_cap": heat_cap,
+            "current_heat": 0,
+            "burn": 0
         }
 
 
@@ -953,7 +1218,7 @@ class CombatTracker(QWidget):
         card.move_down.connect(lambda c: self.move_item(c, 1))
 
         item = QListWidgetItem(self.card_list)
-        item.setSizeHint(QSize(250, 390))
+        item.setSizeHint(QSize(280, 500))  # Увеличен размер виджета в листе
         self.card_list.addItem(item)
         self.card_list.setItemWidget(item, card)
 
@@ -981,6 +1246,10 @@ class CombatTracker(QWidget):
         if file_path:
             for c in self.combatants:
                 c['card'].data['current_hp'] = c['card'].current_hp
+                c['card'].data['current_heat'] = c['card'].current_heat
+                c['card'].data['current_structure'] = c['card'].current_structure
+                c['card'].data['current_stress'] = c['card'].current_stress
+                c['card'].data['burn'] = c['card'].burn
                 c['card'].data['has_acted'] = c['card'].has_acted
 
             encounter_data = [c['card'].data for c in self.combatants]
@@ -1042,64 +1311,37 @@ class AsciiGirl(QLabel):
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
     def set_art(self):
+        art = (
+            "⠀⠀⠀⠀⠀⠔⠁⣠⠞⠕⠁⢠⣾⢿⣻⣿⡿⠀⠀⣰⢀⠀⠀⠀⠀⠀⠀⠀⠹⢿⣿⣧⡀⠉⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡄⠀\n"
+            "⠀⠀⠀⠀⠀⠀⠀⠌⢠⡞⢁⠊⠀⣰⠛⠁⢪⢺⣿⡇⠀⠀⣿⠘⣤⡀⠀⠢⣅⠂⢀⠀⠈⢻⣿⡕⡀⠀⠈⡟⢿⡻⣟⠛⣿⣿⣿⣿⣿⡀\n"
+            "⠐⠒⠤⠤⠤⢄⠂⡶⢋⠀⠀⢀⠀⡵⠀⢠⡟⠸⣿⢱⡇⢀⣿⣶⣯⡇⠀⢀⡉⣿⣦⣕⣤⡀⢙⣷⡌⣆⠀⠘⣦⠑⡜⣆⢱⡌⣿⣿⠙⣷\n"
+            "⠀⠀⠀⠀⠀⠎⡼⢡⣾⠁⠠⢡⡾⠁⢀⣿⣇⠀⣿⣿⣷⢸⣿⣿⡿⢿⣤⣮⡻⣿⣿⣿⣿⣿⣿⣿⣿⣾⣆⡄⠈⢷⡈⢞⡄⠹⡄⢣⠀⣿\n"
+            "⠀⠀⠀⠀⣜⣼⣵⣿⡇⡠⣡⡿⠡⠀⣾⣿⣿⠀⢿⣿⣿⡐⢹⣿⣵⠀⠀⠈⠙⠪⡻⣿⣿⣿⣷⣝⠬⠃⠈⠂⠀⠈⢷⣻⣷⡀⢻⡌⡄⣼\n"
+            "⠀⠀⠀⢰⠹⣿⣿⣿⣳⣿⣿⠃⠇⢰⣿⢿⡿⣧⢸⣿⣿⣧⡌⣿⣿⡇⠀⠀⠀⠀⠹⣿⣿⣿⣷⡹⡟⢮⡢⡀⠀⠀⠈⣷⣿⣧⠘⣿⣡⣿\n"
+            "⠀⠀⠀⣆⣳⡿⢻⣿⡳⣿⡛⢸⠀⣾⡏⠸⣷⢻⣇⣿⢻⣿⡇⢿⣯⣿⡄⠀⠀⠀⠀⠘⢿⣿⣿⣿⣿⣧⡉⡻⠤⣀⠀⠘⣿⣿⣇⢿⣿⣿\n"
+            "⠀⠀⢰⣿⡿⠁⢸⣿⣿⣿⣇⣤⣠⣿⠃⠀⠹⣧⢻⣿⣏⣿⣷⠸⡿⣾⣿⡄⠀⠀⠀⠀⠈⢚⣿⣿⣿⣿⣷⡸⣄⠠⠙⠆⠘⣿⣿⣼⣿⣿\n"
+            "⠀⠀⣸⣿⠁⠀⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠱⡻⣿⣿⣾⣿⣆⢳⠙⢿⣿⣆⠀⠀⠀⠀⠀⢻⣿⣿⣿⣿⣿⣽⣦⠡⡘⣦⢚⣿⣇⣿⣿\n"
+            "⠄⡀⢻⡇⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣀⣀⡉⠓⠺⢌⣻⣿⣿⣿⣾⣆⠀⠙⢝⠳⣄⠀⠀⠀⠀⢿⣿⡟⡟⣿⣿⡿⣷⡐⠼⣷⣻⣿⢿⣿\n"
+            "⠀⠈⠻⡇⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣋⣡⣄⣀⡀⠀⠢⡙⢿⣿⣿⣿⣆⠀⠀⠁⢊⠱⠦⠤⠖⠚⣿⣿⠘⡘⢿⣿⣞⣿⣮⣻⣿⣿⣿⣿\n"
+            "⠀⠀⠀⠈⠄⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣇⠀⡏⠹⡍⢳⢆⠀⠙⢿⣿⣿⣷⡀⠀⠀⠀⢠⢞⣓⣠⣿⣿⣆⣡⣊⢿⣿⣿⣿⣿⣿⣿⣿⣿\n"
+            "⠀⠀⠀⠀⠘⣸⣿⣿⢹⣿⣿⣿⣿⣿⣧⠉⠓⠺⠶⠶⠋⠀⠁⠀⠈⢻⣿⡌⠙⠲⣄⠀⠁⡕⠋⢃⠘⠃⡿⠈⣿⠟⢻⣿⣿⣿⣿⣯⢻⣿\n"
+            "⠀⠀⠀⠀⠀⢻⣿⣯⢀⢻⣿⣟⣿⣿⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⠻⣷⡀⠀⠀⠀⠀⠀⠀⠉⠛⠛⠓⠛⢣⠀⠘⣿⣿⢿⣿⣿⣿⣿\n"
+            "⠀⠀⠀⠀⠀⠸⣿⢿⣄⠹⣿⣿⠘⣿⣿⣿⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢳⠳⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⣽⣿⣸⣿⣾⢪⡟\n"
+            "⠀⠀⠀⠀⠀⠀⣿⠸⣿⣦⡈⢻⡇⠹⣿⣿⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⢿⣿⣫⡼⠁⣽⡏\n"
+            "⠀⠀⠀⠀⠀⠀⣉⡇⢻⣿⣷⣄⣎⠀⠹⡌⢻⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢺⣿⣿⠜⣠⣾⣿⡇\n"
+            "⠀⠀⠀⠀⠀⠀⡎⠁⠈⣿⣹⣿⣿⡄⠀⢳⠀⠙⠧⠀⠀⠀⠀⠀⠀⠂⠀⠒⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠇⠀⢹⣼⣿⣿⣿⣇\n"
+            "⠀⠀⠀⠀⠀⠀⡇⠀⠀⠘⣧⣿⣿⣿⡄⠀⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⣤⣴⣿⣿⣿⣿⣿⣿\n"
+            "⠀⠀⠀⠀⠀⢀⠃⠀⠀⣰⣿⣿⣿⣿⣿⣦⠀⠀⠀⠀⠀⠀⠠⢤⣤⡤⢤⣄⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⢿⣿⣿\n"
+            "⠀⠀⠀⠀⠀⠸⠀⠀⢾⣿⣿⣿⣿⣿⣿⣿⣷⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠀⠀⠀⠀⢀⡠⠚⣹⣿⣿⣿⣿⣿⣿⣿⣿⣧⠙⢯\n"
+            "⠀⠀⠀⠀⢀⠃⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣏⠙⠦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡔⡫⠀⢀⣿⣿⣿⣿⣿⣿⣧⠙⢷⡹⣇⠀\n"
+            "⠀⠀⠀⠀⠂⠀⠀⠀⠀⠹⣿⣿⣿⣿⣿⣿⣿⣿⣓⠤⠌⠲⢤⡀⠀⠀⠀⠀⠀⠀⣠⣤⣾⣯⠞⠀⠀⣸⣿⣿⣿⣿⣿⣿⣿⣆⠀⠃⠘⠀\n"
+            "⠀⠀⡀⠀⠀⠀⠀⣀⣤⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣦⡀⠀⠙⠷⣦⣤⣤⣶⣿⡿⠟⠋⠁⠀⠀⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⡆⠀⠀⠀\n"
+            "⣠⣀⣤⣤⣶⣾⣿⣿⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡗⠀⠀⠀⠈⠉⠉⠉⠀⠀⠀⠀⠀⠀⢀⠞⢻⣿⣿⣿⣿⣿⢿⠿⢿⣿⡀\n"
+        )
         if self.state == 0:
-            art = (
-                "⠀⠀⠀⠀⠀⠔⠁⣠⠞⠕⠁⢠⣾⢿⣻⣿⡿⠀⠀⣰⢀⠀⠀⠀⠀⠀⠀⠀⠹⢿⣿⣧⡀⠉⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡄⠀\n"
-                "⠀⠀⠀⠀⠀⠀⠀⠌⢠⡞⢁⠊⠀⣰⠛⠁⢪⢺⣿⡇⠀⠀⣿⠘⣤⡀⠀⠢⣅⠂⢀⠀⠈⢻⣿⡕⡀⠀⠈⡟⢿⡻⣟⠛⣿⣿⣿⣿⣿⡀\n"
-                "⠐⠒⠤⠤⠤⢄⠂⡶⢋⠀⠀⢀⠀⡵⠀⢠⡟⠸⣿⢱⡇⢀⣿⣶⣯⡇⠀⢀⡉⣿⣦⣕⣤⡀⢙⣷⡌⣆⠀⠘⣦⠑⡜⣆⢱⡌⣿⣿⠙⣷\n"
-                "⠀⠀⠀⠀⠀⠎⡼⢡⣾⠁⠠⢡⡾⠁⢀⣿⣇⠀⣿⣿⣷⢸⣿⣿⡿⢿⣤⣮⡻⣿⣿⣿⣿⣿⣿⣿⣿⣾⣆⡄⠈⢷⡈⢞⡄⠹⡄⢣⠀⣿\n"
-                "⠀⠀⠀⠀⣜⣼⣵⣿⡇⡠⣡⡿⠡⠀⣾⣿⣿⠀⢿⣿⣿⡐⢹⣿⣵⠀⠀⠈⠙⠪⡻⣿⣿⣿⣷⣝⠬⠃⠈⠂⠀⠈⢷⣻⣷⡀⢻⡌⡄⣼\n"
-                "⠀⠀⠀⢰⠹⣿⣿⣿⣳⣿⣿⠃⠇⢰⣿⢿⡿⣧⢸⣿⣿⣧⡌⣿⣿⡇⠀⠀⠀⠀⠹⣿⣿⣿⣷⡹⡟⢮⡢⡀⠀⠀⠈⣷⣿⣧⠘⣿⣡⣿\n"
-                "⠀⠀⠀⣆⣳⡿⢻⣿⡳⣿⡛⢸⠀⣾⡏⠸⣷⢻⣇⣿⢻⣿⡇⢿⣯⣿⡄⠀⠀⠀⠀⠘⢿⣿⣿⣿⣿⣧⡉⡻⠤⣀⠀⠘⣿⣿⣇⢿⣿⣿\n"
-                "⠀⠀⢰⣿⡿⠁⢸⣿⣿⣿⣇⣤⣠⣿⠃⠀⠹⣧⢻⣿⣏⣿⣷⠸⡿⣾⣿⡄⠀⠀⠀⠀⠈⢚⣿⣿⣿⣿⣷⡸⣄⠠⠙⠆⠘⣿⣿⣼⣿⣿\n"
-                "⠀⠀⣸⣿⠁⠀⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠱⡻⣿⣿⣾⣿⣆⢳⠙⢿⣿⣆⠀⠀⠀⠀⠀⢻⣿⣿⣿⣿⣿⣽⣦⠡⡘⣦⢚⣿⣇⣿⣿\n"
-                "⠄⡀⢻⡇⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣀⣀⡉⠓⠺⢌⣻⣿⣿⣿⣾⣆⠀⠙⢝⠳⣄⠀⠀⠀⠀⢿⣿⡟⡟⣿⣿⡿⣷⡐⠼⣷⣻⣿⢿⣿\n"
-                "⠀⠈⠻⡇⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣋⣡⣄⣀⡀⠀⠢⡙⢿⣿⣿⣿⣆⠀⠀⠁⢊⠱⠦⠤⠖⠚⣿⣿⠘⡘⢿⣿⣞⣿⣮⣻⣿⣿⣿⣿\n"
-                "⠀⠀⠀⠈⠄⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣇⠀⡏⠹⡍⢳⢆⠀⠙⢿⣿⣿⣷⡀⠀⠀⠀⢠⢞⣓⣠⣿⣿⣆⣡⣊⢿⣿⣿⣿⣿⣿⣿⣿⣿\n"
-                "⠀⠀⠀⠀⠘⣸⣿⣿⢹⣿⣿⣿⣿⣿⣧⠉⠓⠺⠶⠶⠋⠀⠁⠀⠈⢻⣿⡌⠙⠲⣄⠀⠁⡕⠋⢃⠘⠃⡿⠈⣿⠟⢻⣿⣿⣿⣿⣯⢻⣿\n"
-                "⠀⠀⠀⠀⠀⢻⣿⣯⢀⢻⣿⣟⣿⣿⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⠻⣷⡀⠀⠀⠀⠀⠀⠀⠉⠛⠛⠓⠛⢣⠀⠘⣿⣿⢿⣿⣿⣿⣿\n"
-                "⠀⠀⠀⠀⠀⠸⣿⢿⣄⠹⣿⣿⠘⣿⣿⣿⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢳⠳⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⣽⣿⣸⣿⣾⢪⡟\n"
-                "⠀⠀⠀⠀⠀⠀⣿⠸⣿⣦⡈⢻⡇⠹⣿⣿⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⢿⣿⣫⡼⠁⣽⡏\n"
-                "⠀⠀⠀⠀⠀⠀⣉⡇⢻⣿⣷⣄⣎⠀⠹⡌⢻⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢺⣿⣿⠜⣠⣾⣿⡇\n"
-                "⠀⠀⠀⠀⠀⠀⡎⠁⠈⣿⣹⣿⣿⡄⠀⢳⠀⠙⠧⠀⠀⠀⠀⠀⠀⠂⠀⠒⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠇⠀⢹⣼⣿⣿⣿⣇\n"
-                "⠀⠀⠀⠀⠀⠀⡇⠀⠀⠘⣧⣿⣿⣿⡄⠀⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⣤⣴⣿⣿⣿⣿⣿⣿\n"
-                "⠀⠀⠀⠀⠀⢀⠃⠀⠀⣰⣿⣿⣿⣿⣿⣦⠀⠀⠀⠀⠀⠀⠠⢤⣤⡤⢤⣄⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⢿⣿⣿\n"
-                "⠀⠀⠀⠀⠀⠸⠀⠀⢾⣿⣿⣿⣿⣿⣿⣿⣷⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠀⠀⠀⠀⢀⡠⠚⣹⣿⣿⣿⣿⣿⣿⣿⣿⣧⠙⢯\n"
-                "⠀⠀⠀⠀⢀⠃⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣏⠙⠦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡔⡫⠀⢀⣿⣿⣿⣿⣿⣿⣧⠙⢷⡹⣇⠀\n"
-                "⠀⠀⠀⠀⠂⠀⠀⠀⠀⠹⣿⣿⣿⣿⣿⣿⣿⣿⣓⠤⠌⠲⢤⡀⠀⠀⠀⠀⠀⠀⣠⣤⣾⣯⠞⠀⠀⣸⣿⣿⣿⣿⣿⣿⣿⣆⠀⠃⠘⠀\n"
-                "⠀⠀⡀⠀⠀⠀⠀⣀⣤⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣦⡀⠀⠙⠷⣦⣤⣤⣶⣿⡿⠟⠋⠁⠀⠀⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⡆⠀⠀⠀\n"
-                "⣠⣀⣤⣤⣶⣾⣿⣿⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡗⠀⠀⠀⠈⠉⠉⠉⠀⠀⠀⠀⠀⠀⢀⠞⢻⣿⣿⣿⣿⣿⢿⠿⢿⣿⡀\n"
-            )
             self.setStyleSheet(
                 "font-family: monospace; font-size: 5px; line-height: 1.0; color: #00E5FF; font-weight: bold; background: transparent;")
         else:
-            art = (
-                "⠀⠀⠀⠀⠀⠔⠁⣠⠞⠕⠁⢠⣾⢿⣻⣿⡿⠀⠀⣰⢀⠀⠀⠀⠀⠀⠀⠀⠹⢿⣿⣧⡀⠉⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡄⠀\n"
-                "⠀⠀⠀⠀⠀⠀⠀⠌⢠⡞⢁⠊⠀⣰⠛⠁⢪⢺⣿⡇⠀⠀⣿⠘⣤⡀⠀⠢⣅⠂⢀⠀⠈⢻⣿⡕⡀⠀⠈⡟⢿⡻⣟⠛⣿⣿⣿⣿⣿⡀\n"
-                "⠐⠒⠤⠤⠤⢄⠂⡶⢋⠀⠀⢀⠀⡵⠀⢠⡟⠸⣿⢱⡇⢀⣿⣶⣯⡇⠀⢀⡉⣿⣦⣕⣤⡀⢙⣷⡌⣆⠀⠘⣦⠑⡜⣆⢱⡌⣿⣿⠙⣷\n"
-                "⠀⠀⠀⠀⠀⠎⡼⢡⣾⠁⠠⢡⡾⠁⢀⣿⣇⠀⣿⣿⣷⢸⣿⣿⡿⢿⣤⣮⡻⣿⣿⣿⣿⣿⣿⣿⣿⣾⣆⡄⠈⢷⡈⢞⡄⠹⡄⢣⠀⣿\n"
-                "⠀⠀⠀⠀⣜⣼⣵⣿⡇⡠⣡⡿⠡⠀⣾⣿⣿⠀⢿⣿⣿⡐⢹⣿⣵⠀⠀⠈⠙⠪⡻⣿⣿⣿⣷⣝⠬⠃⠈⠂⠀⠈⢷⣻⣷⡀⢻⡌⡄⣼\n"
-                "⠀⠀⠀⢰⠹⣿⣿⣿⣳⣿⣿⠃⠇⢰⣿⢿⡿⣧⢸⣿⣿⣧⡌⣿⣿⡇⠀⠀⠀⠀⠹⣿⣿⣿⣷⡹⡟⢮⡢⡀⠀⠀⠈⣷⣿⣧⠘⣿⣡⣿\n"
-                "⠀⠀⠀⣆⣳⡿⢻⣿⡳⣿⡛⢸⠀⣾⡏⠸⣷⢻⣇⣿⢻⣿⡇⢿⣯⣿⡄⠀⠀⠀⠀⠘⢿⣿⣿⣿⣿⣧⡉⡻⠤⣀⠀⠘⣿⣿⣇⢿⣿⣿\n"
-                "⠀⠀⢰⣿⡿⠁⢸⣿⣿⣿⣇⣤⣠⣿⠃⠀⠹⣧⢻⣿⣏⣿⣷⠸⡿⣾⣿⡄⠀⠀⠀⠀⠈⢚⣿⣿⣿⣿⣷⡸⣄⠠⠙⠆⠘⣿⣿⣼⣿⣿\n"
-                "⠀⠀⣸⣿⠁⠀⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠱⡻⣿⣿⣾⣿⣆⢳⠙⢿⣿⣆⠀⠀⠀⠀⠀⢻⣿⣿⣿⣿⣿⣽⣦⠡⡘⣦⢚⣿⣇⣿⣿\n"
-                "⠄⡀⢻⡇⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣀⣀⡉⠓⠺⢌⣻⣿⣿⣿⣾⣆⠀⠙⢝⠳⣄⠀⠀⠀⠀⢿⣿⡟⡟⣿⣿⡿⣷⡐⠼⣷⣻⣿⢿⣿\n"
-                "⠀⠈⠻⡇⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣋⣡⣄⣀⡀⠀⠢⡙⢿⣿⣿⣿⣆⠀⠀⠁⢊⠱⠦⠤⠖⠚⣿⣿⠘⡘⢿⣿⣞⣿⣮⣻⣿⣿⣿⣿\n"
-                "⠀⠀⠀⠈⠄⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣇⠀⡏⠹⡍⢳⢆⠀⠙⢿⣿⣿⣷⡀⠀⠀⠀⢠⢞⣓⣠⣿⣿⣆⣡⣊⢿⣿⣿⣿⣿⣿⣿⣿⣿\n"
-                "⠀⠀⠀⠀⠘⣸⣿⣿⢹⣿⣿⣿⣿⣿⣧⠉⠓⠺⠶⠶⠋⠀⠁⠀⠈⢻⣿⡌⠙⠲⣄⠀⠁⡕⠋⢃⠘⠃⡿⠈⣿⠟⢻⣿⣿⣿⣿⣯⢻⣿\n"
-                "⠀⠀⠀⠀⠀⢻⣿⣯⢀⢻⣿⣟⣿⣿⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⠻⣷⡀⠀⠀⠀⠀⠀⠀⠉⠛⠛⠓⠛⢣⠀⠘⣿⣿⢿⣿⣿⣿⣿\n"
-                "⠀⠀⠀⠀⠀⠸⣿⢿⣄⠹⣿⣿⠘⣿⣿⣿⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢳⠳⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⣽⣿⣸⣿⣾⢪⡟\n"
-                "⠀⠀⠀⠀⠀⠀⣿⠸⣿⣦⡈⢻⡇⠹⣿⣿⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⢿⣿⣫⡼⠁⣽⡏\n"
-                "⠀⠀⠀⠀⠀⠀⣉⡇⢻⣿⣷⣄⣎⠀⠹⡌⢻⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢺⣿⣿⠜⣠⣾⣿⡇\n"
-                "⠀⠀⠀⠀⠀⠀⡎⠁⠈⣿⣹⣿⣿⡄⠀⢳⠀⠙⠧⠀⠀⠀⠀⠀⠀⠂⠀⠒⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠇⠀⢹⣼⣿⣿⣿⣇\n"
-                "⠀⠀⠀⠀⠀⠀⡇⠀⠀⠘⣧⣿⣿⣿⡄⠀⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⣤⣴⣿⣿⣿⣿⣿⣿\n"
-                "⠀⠀⠀⠀⠀⢀⠃⠀⠀⣰⣿⣿⣿⣿⣿⣦⠀⠀⠀⠀⠀⠀⠠⢤⣤⡤⢤⣄⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⢿⣿⣿\n"
-                "⠀⠀⠀⠀⠀⠸⠀⠀⢾⣿⣿⣿⣿⣿⣿⣿⣷⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠀⠀⠀⠀⢀⡠⠚⣹⣿⣿⣿⣿⣿⣿⣿⣿⣧⠙⢯\n"
-                "⠀⠀⠀⠀⢀⠃⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣏⠙⠦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡔⡫⠀⢀⣿⣿⣿⣿⣿⣿⣧⠙⢷⡹⣇⠀\n"
-                "⠀⠀⠀⠀⠂⠀⠀⠀⠀⠹⣿⣿⣿⣿⣿⣿⣿⣿⣓⠤⠌⠲⢤⡀⠀⠀⠀⠀⠀⠀⣠⣤⣾⣯⠞⠀⠀⣸⣿⣿⣿⣿⣿⣿⣿⣆⠀⠃⠘⠀\n"
-                "⠀⠀⡀⠀⠀⠀⠀⣀⣤⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣦⡀⠀⠙⠷⣦⣤⣤⣶⣿⡿⠟⠋⠁⠀⠀⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⡆⠀⠀⠀\n"
-                "⣠⣀⣤⣤⣶⣾⣿⣿⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡗⠀⠀⠀⠈⠉⠉⠉⠀⠀⠀⠀⠀⠀⢀⠞⢻⣿⣿⣿⣿⣿⢿⠿⢿⣿⡀\n"
-            )
             self.setStyleSheet(
                 "font-family: monospace; font-size: 5px; line-height: 1.0; color: #FF3366; font-weight: bold; background: transparent;")
 
@@ -1138,6 +1380,7 @@ class EncounterBuilder(QWidget):
         self.enemy_list.itemClicked.connect(self.preview_enemy)
 
         for key, preset in sorted(NPC_PRESETS.items()):
+            if key == "Templates": continue  # Игнорируем шаблоны из JSON
             name = loc(preset, "name")
             item = QListWidgetItem(name)
             item.setData(Qt.ItemDataRole.UserRole, key)
@@ -1171,7 +1414,8 @@ class EncounterBuilder(QWidget):
         preset = NPC_PRESETS.get(key)
         if preset:
             t1_stats = preset.get("tiers", {}).get("Tier 1",
-                                                   {"hp": 10, "eva": 10, "edef": 10, "spd": 4, "sen": 10, "save": 10})
+                                                   {"hp": 10, "eva": 10, "edef": 10, "spd": 4, "sen": 10, "save": 10,
+                                                    "heat": 6})
             preview_data = {
                 "name": loc(preset, "name"),
                 "hp": t1_stats.get("hp", 10),
@@ -1180,6 +1424,13 @@ class EncounterBuilder(QWidget):
                 "speed": t1_stats.get("spd", 4),
                 "sensors": t1_stats.get("sen", 10),
                 "save": t1_stats.get("save", 10),
+                "max_structure": 1,
+                "current_structure": 1,
+                "max_stress": 1,
+                "current_stress": 1,
+                "heat_cap": t1_stats.get("heat", 6),
+                "current_heat": 0,
+                "burn": 0,
                 "faction": "enemy",
                 "tier": "Tier 1",
                 "tier_display": "Tier 1 (Base)",
