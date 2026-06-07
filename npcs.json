@@ -775,7 +775,7 @@
                 "desc_en": "Three characters within 3 of the target take 2/3/4 damage."
             }
         ]
-    }
+    },
     "Breacher": {
         "name_ru": "Проломщик",
         "name_en": "Breacher",
@@ -1732,7 +1732,7 @@
                 "desc_en": "Damage: 3/4/5 Energy + 2/4/6 Burn. Arcing, Loading. Range 5, Blast 1."
             }
         ]
-    }
+    },
     "Rainmaker": {
         "name_ru": "Градовержец",
         "name_en": "Rainmaker",
